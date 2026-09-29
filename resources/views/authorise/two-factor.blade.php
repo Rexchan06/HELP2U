@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Verify your account - UniHELP</title>
+    <title>Enter your code - UniHELP</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
@@ -27,30 +27,22 @@
 
     <main class="auth-main">
         <div class="auth-card">
-            <div class="alert alert-success" role="status">Account created. We sent a verification link and a 6-digit code to aisha.rahman@student.example.edu.</div>
+            <div class="alert alert-success" role="status">We sent a 6-digit code to aisha.rahman@student.example.edu.</div>
 
-            <h2>Verify your account</h2>
-            <p class="lead">Enter the 6-digit code we sent to <strong>aisha.rahman@student.example.edu</strong>, then choose a password.</p>
+            <h2>Enter your login code</h2>
+            <p class="lead">Type the 6-digit code we emailed you. It expires in 10 minutes.</p>
 
             <form action="{{ route('dashboard') }}" method="get">
                 <div class="field">
                     <label for="code">6-digit code</label>
                     <input id="code" type="text" required class="otp" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autofocus autocomplete="one-time-code">
                 </div>
-                <div class="field">
-                    <label for="password">New password</label>
-                    <input id="password" type="password" required autocomplete="new-password">
-                <p class="hint">At least 8 characters, with letters and numbers.</p>
-                </div>
-                <div class="field">
-                    <label for="password_confirmation">Confirm password</label>
-                    <input id="password_confirmation" type="password" required autocomplete="new-password">
-                </div>
 
-                <button type="submit" class="btn btn-primary">Activate account</button>
+                <button type="submit" class="btn btn-primary">Log in</button>
             </form>
 
-            <p class="inline-form"><a href="{{ route('verify') }}" class="link-btn">Send a new code</a></p>
+            <p class="inline-form"><a href="two-factor.html" class="link-btn">Send a new code</a></p>
+            <p class="switch"><a href="{{ route('login') }}">Back to log in</a></p>
         </div>
     </main>
 </div>
