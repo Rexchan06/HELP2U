@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('volunteer_profiles', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->unique()->cascadeOnDelete();
+            $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
             $table->text('bio')->nullable();
             $table->boolean('supports_f2f')->default(false);
             $table->boolean('supports_virtual')->default(false);
