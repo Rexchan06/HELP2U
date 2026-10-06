@@ -7,8 +7,12 @@ use App\Http\Controllers\VerificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('login'));
-Route::view('/login', 'authorise.login')->name('login');
-Route::view('/register', 'authorise.register')->name('register');
-Route::view('/verify', 'authorise.verify')->name('verify');
-Route::view('/dashboard', 'dashboard')->name('dashboard');
-Route::view('/two-factor', 'authorise.two-factor')->name('two-factor');
+
+Route::get('/register', [RegisterController::class, 'show'])->name('register');
+Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
+
+Route::get('/login', [LoginController::class, 'show'])->name('login');
+Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:5,1')->name('login.store');
+Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
+
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('auth')->name('dashboard');

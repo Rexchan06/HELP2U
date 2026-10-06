@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Enter your code - UniHELP</title>
+    <title>Enter your code - HELP2U</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
 <body>
 <div class="auth">
     <aside class="auth-side">
-        <a href="{{ route('login') }}" class="brand">UniHELP</a>
+        <a href="{{ route('login') }}" class="brand">HELP2U</a>
         <div>
             <h1>Students helping students.</h1>
             <p>Ask for support, or offer your own skills to other students at your university.</p>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Log in - UniHELP</title>
+    <title>Log in - HELP2U</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
 <body>
 <div class="auth">
     <aside class="auth-side">
-        <a href="{{ route('login') }}" class="brand">UniHELP</a>
+        <a href="{{ route('login') }}" class="brand">HELP2U</a>
         <div>
             <h1>Students helping students.</h1>
             <p>Ask for support, or offer your own skills to other students at your university.</p>
@@ -29,19 +29,27 @@
         <div class="auth-card">
             <h2>Log in</h2>
             <p class="lead">Enter your email and password. We will then email you a 6-digit code.</p>
+            
+            @if (session('status'))
+                    <div class="alert alert-success" role="status">{{ session('status') }}</div>
+            @endif
+            <form method="POST" action="{{ route('login.store') }}">
+            @csrf
 
-            <form action="{{ route('two-factor') }}" method="get">
-                <div class="field">
-                    <label for="email">University email address</label>
-                    <input id="email" type="email" required autofocus autocomplete="email">
-                </div>
-                <div class="field">
-                    <label for="password">Password</label>
-                    <input id="password" type="password" required autocomplete="current-password">
-                </div>
+            <div class="field">
+                <label for="email">University email address</label>
+                <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus>
+                @error('email')<p class="error">{{ $message }}</p>@enderror
+            </div>
 
-                <button type="submit" class="btn btn-primary">Log in</button>
-            </form>
+            <div class="field">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" required>
+                @error('password')<p class="error">{{ $message }}</p>@enderror
+            </div>
+
+            <button type="submit" class="btn btn-primary">Log in</button>
+        </form>
 
             <p class="switch">New to UniHELP? <a href="{{ route('register') }}">Create an account</a></p>
         </div>
