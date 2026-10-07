@@ -118,6 +118,8 @@ a { color: var(--teal); }
     border-radius: var(--radius);
 }
 .alert-success { background: #e9f5ee; border-color: #a9d3b8; color: var(--ok); }
+.alert-error { background: #fdecea; border-color: #f1b5b0; color: var(--danger); }
+.alert ul { margin: 0; padding-left: 1.2rem; }
 
 /* ---------- Dashboard ---------- */
 .topbar {
@@ -157,6 +159,44 @@ a { color: var(--teal); }
 }
 .actions .desc { display: block; color: var(--muted); }
 .tag { font-size: .85rem; background: #fdf1d3; border-radius: 999px; padding: .15rem .7rem; white-space: nowrap; }
+
+/* ---------- Edit profile ---------- */
+.profile-card {
+    max-width: 34rem;
+    margin: 0 auto;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 2rem;
+}
+.profile-title { font-size: 1.5rem; margin-bottom: 1.5rem; }
+.profile-title::after {
+    content: "";
+    display: block;
+    width: 2rem;
+    height: 3px;
+    margin-top: .5rem;
+    background: var(--sun);
+}
+
+.field textarea {
+    width: 100%;
+    min-height: 8rem;
+    padding: .7rem .8rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font: inherit;
+    color: var(--ink);
+    background: var(--paper);
+    resize: vertical;
+}
+.field textarea:focus { border-color: var(--teal); }
+.field input[readonly] { background: #eef1f5; color: var(--muted); cursor: not-allowed; }
+
+.profile-actions { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1.5rem; }
+.profile-actions .btn { width: auto; text-align: center; text-decoration: none; }
+.btn-outline { background: transparent; border: 1px solid var(--line); color: var(--ink); }
+.btn-outline:hover { background: var(--bg); }
 
 /* ---------- Small screens ---------- */
 @media (max-width: 800px) {

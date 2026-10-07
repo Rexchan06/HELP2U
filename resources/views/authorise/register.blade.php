@@ -30,13 +30,22 @@
             <h2>Create your account</h2>
             <p class="lead">Register with your student details. We will email you a code to verify your account.</p>
 
+                                @if ($errors->any())
+                        <div class="alert alert-error" role="alert">
+                            <ul>
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
             <form method="POST" action="{{ route('register.store') }}">
             @csrf
 
             <div class="field">
-                <label for="id">Student ID</label>
-                <input id="id" name="id" type="text" value="{{ old('id') }}" required>
-                @error('id')<p class="error">{{ $message }}</p>@enderror
+                <label for="student_id">Student ID</label>
+                <input id="student_id" name="student_id" type="text" value="{{ old('student_id') }}" required>
+                @error('student_id')<p class="error">{{ $message }}</p>@enderror
             </div>
 
             <div class="field">

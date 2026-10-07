@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\VerificationController;
+use App\Http\Controllers\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('login'));
@@ -16,3 +17,5 @@ Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:5
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('auth')->name('dashboard');
+Route::get('/profile', [UserProfileController::class, 'edit'])->middleware('auth')->name('profile.edit');
+Route::put('/profile', [UserProfileController::class, 'update'])->middleware('auth')->name('profile.update');

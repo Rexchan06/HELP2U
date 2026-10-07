@@ -22,7 +22,9 @@
 </header>
 
 <main class="container">
-    <div class="alert alert-success" role="status">Your account is active. Welcome to HELP2U!</div>
+    @if (session('status'))
+    <div class="alert alert-success" role="status">{{ session('status') }}</div>
+    @endif
 
     <h1>Welcome, {{ $user->name }}</h1>
     <p class="lead">Your account is active. Set up your profile to start asking for or offering support.</p>
@@ -41,7 +43,7 @@
         <ul class="actions">
             <li>
                 <div><strong>Manage your profile</strong><span class="desc">Update your name and contact details.</span></div>
-                <span class="tag">Coming soon</span>
+                <a href="{{ route('profile.edit') }}" class="link-btn">Edit profile</a>
             </li>
             <li>
                 <div><strong>Become a volunteer</strong><span class="desc">Choose the categories you can support: Academic, Technology, New Student or General.</span></div>
