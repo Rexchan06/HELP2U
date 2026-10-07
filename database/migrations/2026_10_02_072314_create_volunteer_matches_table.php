@@ -19,6 +19,8 @@ return new class extends Migration
             $table->timestamp('expires_at')->index();
             $table->timestamp('responded_at')->nullable();
             $table->timestamps();
+            
+            $table->unique(['support_request_id', 'volunteer_profile_id']);
         });
     }
 
