@@ -4,13 +4,13 @@ namespace App\Enums;
 
 enum SupportMode: string
 {
-    case FaceToFace = 'f2f';
-    case Virtual = 'virtual';
+    case F2F = 'F2F';
+    case Virtual = 'VIRTUAL';
 
     public function label(): string
     {
         return match ($this) {
-            self::FaceToFace => 'Face-to-face',
+            self::F2F => 'Face-to-face',
             self::Virtual => 'Virtual',
         };
     }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\SupportRequestController;
+use App\Http\Controllers\VolunteerController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/support-requests');
@@ -11,6 +12,9 @@ Route::redirect('/', '/support-requests');
 // replace $this->currentUser($request) with $request->user().
 Route::resource('support-requests', SupportRequestController::class)
     ->only(['index', 'create', 'store']);
+
+Route::get('volunteers', [VolunteerController::class, 'index'])->name('volunteers.index');
+Route::get('volunteers/{volunteer}', [VolunteerController::class, 'show'])->name('volunteers.show');
  
 // Route::get('/login', function () {
 //     abort_unless(app()->environment('local'), 404);
@@ -28,4 +32,6 @@ Route::resource('support-requests', SupportRequestController::class)
 // Route::middleware('auth')->group(function () {
 //     Route::resource('support-requests', SupportRequestController::class)
 //         ->only(['index', 'create', 'store']);
+//     Route::get('volunteers', [VolunteerController::class, 'index'])->name('volunteers.index');
+//     Route::get('volunteers/{volunteer}', [VolunteerController::class, 'show'])->name('volunteers.show');
 // });

@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(CategorySeeder::class);
+        $this->call(VolunteerSeeder::class);
 
         User::factory()->create([
             'student_id' => 'S0001',

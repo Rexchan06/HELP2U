@@ -38,7 +38,7 @@
                                 <td class="px-6 py-4">{{ $supportRequest->support_mode->label() }}</td>
                                 <td class="px-6 py-4">
                                     <span class="rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
-                                        {{ ucfirst($supportRequest->status) }}
+                                        {{ $supportRequest->status->label() }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-gray-500">{{ $supportRequest->created_at->format('d M Y') }}</td>

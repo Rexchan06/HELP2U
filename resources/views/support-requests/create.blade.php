@@ -56,7 +56,7 @@
                                 type="radio"
                                 name="support_mode"
                                 value="{{ $mode->value }}"
-                                @checked(old('support_mode', \App\Enums\SupportMode::FaceToFace->value) === $mode->value)
+                                @checked(old('support_mode', \App\Enums\SupportMode::F2F->value) === $mode->value)
                                 class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
                             >
                             {{ $mode->label() }}

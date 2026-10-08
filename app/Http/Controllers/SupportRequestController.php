@@ -40,11 +40,11 @@ class SupportRequestController extends Controller
      */
     public function store(StoreSupportRequestRequest $request): RedirectResponse
     {
-        $this->currentUser($request)->supportRequests()->create($request->validated());
+        $supportRequest = $this->currentUser($request)->supportRequests()->create($request->validated());
 
         return redirect()
-            ->route('support-requests.index')
-            ->with('success', 'Your support request has been submitted. We are now finding volunteers for you.');
+            ->route('volunteers.index', ['support_request' => $supportRequest->id])
+            ->with('success', 'Your support request has been submitted. Here are volunteers who can help.');
     }
 
     /**

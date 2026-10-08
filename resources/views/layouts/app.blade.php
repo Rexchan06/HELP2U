@@ -20,7 +20,7 @@
 
                 <div class="flex items-center gap-7 text-sm text-gray-200">
                     <a href="{{ url('/') }}" class="transition hover:text-white">Home</a>
-                    <a href="#" class="transition hover:text-white">Find support</a>
+                    <a href="{{ route('volunteers.index') }}" class="transition hover:text-white">Find support</a>
                     <a href="#" class="transition hover:text-white">Session</a>
                     <a href="{{ route('support-requests.index') }}" class="transition hover:text-white">History</a>
 
