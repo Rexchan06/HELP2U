@@ -8,7 +8,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/support-requests/{supportRequest}/sessions/create', [SupportSessionController::class, 'create'])
         ->name('support-sessions.create');
 
-    Route::post('/support-request/{supportRequest}/sessions', [SupportSessionController::class, 'store'])
+    Route::post('/support-requests/{supportRequest}/sessions', [SupportSessionController::class, 'store'])
         ->name('support-sessions.store');
 
     Route::get('/support-sessions', [SupportSessionController::class, 'index'])
