@@ -10,16 +10,7 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<header class="topbar">
-    <a href="{{ route('dashboard') }}" class="brand">HELP2U</a>
-    <div class="topbar-user">
-        <span>{{ $user->name }}</span>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit" class="link-btn">Log out</button>
-        </form>
-    </div>
-</header>
+@include('partials.navbar')
 
 <main class="container">
     @if (session('status'))
@@ -42,21 +33,10 @@
         <h2>What you can do</h2>
         <ul class="actions">
             <li>
-                <div><strong>Manage your profile</strong><span class="desc">Update your name and contact details.</span></div>
-                <a href="{{ route('profile.edit') }}" class="link-btn">Edit profile</a>
+                <div><strong>Volunteer Profile</strong><span class="desc">Become a volunteer and manage your volunteer profile here.</span></div>
+                <a href="{{ route('volunteer.profile') }}" class="link-btn">Manage Profile</a>
             </li>
-            <li>
-                <div><strong>Become a volunteer</strong><span class="desc">Choose the categories you can support: Academic, Technology, New Student or General.</span></div>
-                <span class="tag">Coming soon</span>
-            </li>
-            <li>
-                <div><strong>Skills and interests</strong><span class="desc">Tell other students what you can help with.</span></div>
-                <span class="tag">Coming soon</span>
-            </li>
-            <li>
-                <div><strong>Availability</strong><span class="desc">Set when you are free and whether you prefer virtual or face-to-face support.</span></div>
-                <span class="tag">Coming soon</span>
-            </li>
+
         </ul>
     </section>
 </main>

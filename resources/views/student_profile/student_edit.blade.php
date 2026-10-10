@@ -10,16 +10,7 @@
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 </head>
 <body>
-<header class="topbar">
-    <a href="{{ route('dashboard') }}" class="brand">HELP2U</a>
-    <div class="topbar-user">
-        <span>{{ $user->name }}</span>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit" class="link-btn">Log out</button>
-        </form>
-    </div>
-</header>
+@include('partials.navbar')
 
 <main class="container">
     <div class="profile-card">
