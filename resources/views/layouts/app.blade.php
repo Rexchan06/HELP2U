@@ -63,6 +63,15 @@
                    title="{{ auth()->user()->name ?? 'Profile' }}">
                     {{ $initials ?: '?' }}
                 </a>
+
+                @if (Route::has('logout'))
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="text-sm font-medium text-gray-500 transition hover:text-gray-900">
+                            Log out
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
     </header>
