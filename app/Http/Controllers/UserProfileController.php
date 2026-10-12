@@ -21,6 +21,6 @@ class UserProfileController extends Controller
 
         $request->user()->update($data);
 
-        return redirect()->route('dashboard')->with('status', 'Your profile has been updated.');
+        return redirect()->route('dashboard')->with('success','Your profile has been updated.');
     }
 }

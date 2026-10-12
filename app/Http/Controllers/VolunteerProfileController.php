@@ -138,6 +138,6 @@ class VolunteerProfileController extends Controller
             }
         });
 
-        return redirect()->route('dashboard')->with('status', 'Your volunteer profile has been saved.');
+        return redirect()->route('dashboard')->with('success','Your volunteer profile has been saved.');
     }
 }

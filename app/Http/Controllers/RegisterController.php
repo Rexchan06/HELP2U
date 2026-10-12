@@ -33,6 +33,6 @@ class RegisterController extends Controller
             'password'   => Hash::make($data['password']),
         ]);
 
-        return redirect()->route('login')->with('status', 'Account created. You can now log in.');
+        return redirect()->route('login')->with('success', 'Account created. You can now log in.');
     }
 }
