@@ -28,7 +28,8 @@
     <main class="auth-main">
         <div class="auth-card">
             <h2>Log in</h2>
-            <p class="lead">Enter your email and password. We will then email you a 6-digit code.</p>
+            {{-- <p class="lead">Enter your email and password. We will then email you a 6-digit code.</p> --}}
+            <p class="lead">Enter your email and password.</p>
             
             @if (session('status'))
                     <div class="alert alert-success" role="status">{{ session('status') }}</div>
