@@ -52,7 +52,7 @@
             <button type="submit" class="btn btn-primary">Log in</button>
         </form>
 
-            <p class="switch">New to UniHELP? <a href="{{ route('register') }}">Create an account</a></p>
+            <p class="switch">New to HELP2U? <a href="{{ route('register') }}">Create an account</a></p>
         </div>
     </main>
 </div>

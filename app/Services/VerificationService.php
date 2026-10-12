@@ -52,11 +52,11 @@ class VerificationService
         $code = $this->issueCode($user, $purpose);
 
         $body = $purpose === 'register'
-            ? "Hi {$user->name},\n\nYour UniHELP verification code is: {$code}\n\nVerify your account here:\n" . $this->verifyUrl($user) . "\n\nThe code expires in 10 minutes."
-            : "Hi {$user->name},\n\nYour UniHELP login code is: {$code}\n\nThe code expires in 10 minutes.";
+            ? "Hi {$user->name},\n\nYour HELP2U verification code is: {$code}\n\nVerify your account here:\n" . $this->verifyUrl($user) . "\n\nThe code expires in 10 minutes."
+            : "Hi {$user->name},\n\nYour HELP2U login code is: {$code}\n\nThe code expires in 10 minutes.";
 
         Mail::raw($body, function ($mail) use ($user, $purpose) {
-            $mail->to($user->email)->subject($purpose === 'register' ? 'Verify your UniHELP account' : 'Your UniHELP login code');
+            $mail->to($user->email)->subject($purpose === 'register' ? 'Verify your HELP2U account' : 'Your HELP2U login code');
         });
     }
 }
