@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\SupportSession;
 use App\Enums\MatchStatus;
 use App\Models\SupportRequest;
+use App\Enums\SupportMode;
+use Illuminate\Validation\Rule;
 
 class SupportSessionController extends Controller
 {
@@ -55,7 +57,10 @@ class SupportSessionController extends Controller
 
         $validated = $request->validate([
             'scheduled_start' => 'required|date|after:now',
-            'location' => 'nullable|string|max:255',
+            'location' => [
+                Rule::requiredIf($supportRequest->support_mode === SupportMode::F2F),
+                'nullable', 'string', 'max:255',
+            ],
         ]);
 
         $validated['volunteer_match_id'] = $match->id;

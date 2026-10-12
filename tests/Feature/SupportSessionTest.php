@@ -32,7 +32,7 @@ function makeVolunteer(): array
     return [$user, $profile];
 }
 
-function makeMatch(User $student, VolunteerProfile $profile, MatchStatus $status = MatchStatus::Accepted): VolunteerMatch
+function makeMatch(User $student, VolunteerProfile $profile, MatchStatus $status = MatchStatus::Accepted, string $mode = 'F2F'): VolunteerMatch
 {
     $category = Category::firstOrCreate(['name' => 'Academic']);
 
@@ -40,7 +40,7 @@ function makeMatch(User $student, VolunteerProfile $profile, MatchStatus $status
         'user_id' => $student->id,
         'category_id' => $category->id,
         'description' => 'Need help with Laravel',
-        'support_mode' => 'F2F',
+        'support_mode' => $mode,
         'status' => 'OPEN',
     ]);
 
@@ -79,7 +79,7 @@ it('TC1 - create() function shows the schedule form to the student with an accep
         ->assertViewIs('support-sessions.create');
 });
 
-it('TC2 returns 403 on the schedule form for a non-owner', function () {
+it('TC2 - create() function returns 403 (Forbidden) on the schedule form if the student does not belong to the match', function () {
     $student = makeUser();
     $other = makeUser();
     [, $vp] = makeVolunteer();
@@ -90,7 +90,7 @@ it('TC2 returns 403 on the schedule form for a non-owner', function () {
         ->assertForbidden();
 });
 
-it('TC3 blocks the form when there is no accepted match', function () {
+it('TC3 - create() function blocks the form when there is no accepted match', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $match = makeMatch($student, $vp, MatchStatus::Pending);
@@ -101,7 +101,7 @@ it('TC3 blocks the form when there is no accepted match', function () {
         ->assertSessionHas('failed', 'This request has no accepted match.');
 });
 
-it('TC4 blocks the form when a session already exists', function () {
+it('TC4 - create() function blocks the form when a session already exists', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $match = makeMatch($student, $vp);
@@ -113,7 +113,7 @@ it('TC4 blocks the form when a session already exists', function () {
         ->assertSessionHas('failed', 'A session has already been scheduled for this request.');
 });
 
-it('TC5 redirects guests from the schedule form to login', function () {
+it('TC5 - create() function redirects a guest (not logged in) to the login page', function () {
     // needs the named route 'login' from UC1
     $student = makeUser();
     [, $vp] = makeVolunteer();
@@ -123,7 +123,7 @@ it('TC5 redirects guests from the schedule form to login', function () {
         ->assertRedirect(route('login'));
 })->skip('Waiting for UC1: no named route "login" exists yet');
 
-it('TC6 returns 404 for a non-existent request', function () {
+it('TC6 - create() function returns 404 (Not Found) when the support request does not exist', function () {
     $this->actingAs(makeUser())
         ->get('/support-requests/9999/sessions/create')
         ->assertNotFound();
@@ -131,7 +131,7 @@ it('TC6 returns 404 for a non-existent request', function () {
 
 // store() Test
 
-it('TC7 creates a session with valid data', function () {
+it('TC7 - store() function creates a session when the student submits valid data', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $match = makeMatch($student, $vp);
@@ -150,20 +150,21 @@ it('TC7 creates a session with valid data', function () {
     $this->assertDatabaseHas('support_sessions', ['volunteer_match_id' => $match->id, 'status' => 'SCHEDULED', 'duration_minutes' => 60]);
 });
 
-it('TC8 allows an empty location', function () {
+it('TC8 - store() function allows the location to be empty for a virtual session', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
-    $match = makeMatch($student, $vp);
+    $match = makeMatch($student, $vp, MatchStatus::Accepted, 'VIRTUAL');
 
     $this->actingAs($student)->post(route('support-sessions.store', $match->supportRequest), [
         'scheduled_start' => future(),
         'location' => '',
-    ])->assertRedirect();
+    ])->assertSessionHasNoErrors()
+    ->assertRedirect();
 
     expect(SupportSession::first()->location)->toBeNull();
 });
 
-it('TC9 requires scheduled_start', function () {
+it('TC9 - store() function rejects the form when scheduled_start is empty', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $match = makeMatch($student, $vp);
@@ -176,7 +177,7 @@ it('TC9 requires scheduled_start', function () {
     expect(SupportSession::count())->toBe(0);
 });
 
-it('TC10 rejects a past scheduled_start', function () {
+it('TC10 - store() function rejects a scheduled_start in the past', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $match = makeMatch($student, $vp);
@@ -189,7 +190,7 @@ it('TC10 rejects a past scheduled_start', function () {
     expect(SupportSession::count())->toBe(0);
 });
 
-it('TC11 rejects a non-date scheduled_start', function () {
+it('TC11 - store() function rejects a scheduled_start that is not a date', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $match = makeMatch($student, $vp);
@@ -202,7 +203,7 @@ it('TC11 rejects a non-date scheduled_start', function () {
     expect(SupportSession::count())->toBe(0);
 });
 
-it('TC12 rejects a 256-character location', function () {
+it('TC12 - store() function rejects a location with 256 characters (over the limit)', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $match = makeMatch($student, $vp);
@@ -215,7 +216,7 @@ it('TC12 rejects a 256-character location', function () {
     expect(SupportSession::count())->toBe(0);
 });
 
-it('TC13 accepts a 255-character location', function () {
+it('TC13 - store() function accepts a location with exactly 255 characters', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $match = makeMatch($student, $vp);
@@ -228,7 +229,7 @@ it('TC13 accepts a 255-character location', function () {
     expect(strlen(SupportSession::first()->location))->toBe(255);
 });
 
-it('TC14 returns 403 when a non-owner posts a session', function () {
+it('TC14 - store() function returns 403 (Forbidden) if the student does not own the request', function () {
     $student = makeUser();
     $other = makeUser();
     [, $vp] = makeVolunteer();
@@ -242,7 +243,7 @@ it('TC14 returns 403 when a non-owner posts a session', function () {
     expect(SupportSession::count())->toBe(0);
 });
 
-it('TC15 blocks store without an accepted match', function () {
+it('TC15 - store() function blocks the session when there is no accepted match', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $match = makeMatch($student, $vp, MatchStatus::Pending);
@@ -255,7 +256,7 @@ it('TC15 blocks store without an accepted match', function () {
     expect(SupportSession::count())->toBe(0);
 });
 
-it('TC16 blocks a duplicate session submission', function () {
+it('TC16 - store() function blocks a second session for the same request', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $match = makeMatch($student, $vp);
@@ -270,7 +271,7 @@ it('TC16 blocks a duplicate session submission', function () {
 
 // index() Test
 
-it('TC17 lists a student\'s own sessions', function () {
+it('TC17 - index() function lists the student\'s own sessions', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $s1 = makeSession(makeMatch($student, $vp), now()->addDays(10));
@@ -281,7 +282,7 @@ it('TC17 lists a student\'s own sessions', function () {
         ->assertViewHas('supportSessions', fn ($list) => $list->pluck('id')->sort()->values()->all() === [$s1->id, $s2->id]);
 });
 
-it('TC18 lists a volunteer\'s assigned sessions', function () {
+it('TC18 - index() function lists the sessions assigned to the volunteer', function () {
     $student = makeUser();
     [$volUser, $vp] = makeVolunteer();
     $s1 = makeSession(makeMatch($student, $vp));
@@ -291,23 +292,23 @@ it('TC18 lists a volunteer\'s assigned sessions', function () {
         ->assertViewHas('supportSessions', fn ($list) => $list->pluck('id')->all() === [$s1->id]);
 });
 
-it('TC19 shows an empty list for a user with no sessions', function () {
+it('TC19 - index() function shows an empty list when the user has no sessions', function () {
     $this->actingAs(makeUser())->get(route('support-sessions.index'))
         ->assertOk()
         ->assertViewHas('supportSessions', fn ($list) => $list->isEmpty());
 });
 
-it('TC20 does not list other people\'s sessions', function () {
+it('TC20 - index() function does not list other people\'s sessions', function () {
     $studentA = makeUser();
     $studentB = makeUser();
     [, $vpW] = makeVolunteer();
-    makeSession(makeMatch($studentB, $vpW)); // S3
+    makeSession(makeMatch($studentB, $vpW)); // a session that belongs to another student
 
     $this->actingAs($studentA)->get(route('support-sessions.index'))
         ->assertViewHas('supportSessions', fn ($list) => $list->isEmpty());
 });
 
-it('TC21 orders sessions by start time, latest first', function () {
+it('TC21 - index() function orders sessions by start time, latest first', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $s1 = makeSession(makeMatch($student, $vp), now()->addDays(10));
@@ -319,7 +320,7 @@ it('TC21 orders sessions by start time, latest first', function () {
 
 // show() Test
 
-it('TC22 lets the student view the session', function () {
+it('TC22 - show() function lets the student view their own session', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $session = makeSession(makeMatch($student, $vp));
@@ -328,7 +329,7 @@ it('TC22 lets the student view the session', function () {
         ->assertOk()->assertViewIs('support-sessions.show');
 });
 
-it('TC23 lets the volunteer view the session', function () {
+it('TC23 - show() function lets the volunteer view their assigned session', function () {
     $student = makeUser();
     [$volUser, $vp] = makeVolunteer();
     $session = makeSession(makeMatch($student, $vp));
@@ -337,7 +338,7 @@ it('TC23 lets the volunteer view the session', function () {
         ->assertOk()->assertViewIs('support-sessions.show');
 });
 
-it('TC24 returns 403 for a non-participant', function () {
+it('TC24 - show() function returns 403 (Forbidden) for a user who is not in the session', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $session = makeSession(makeMatch($student, $vp));
@@ -346,11 +347,11 @@ it('TC24 returns 403 for a non-participant', function () {
         ->assertForbidden();
 });
 
-it('TC25 returns 404 for a non-existent session', function () {
+it('TC25 - show() function returns 404 (Not Found) when the session does not exist', function () {
     $this->actingAs(makeUser())->get('/support-sessions/9999')->assertNotFound();
 });
 
-it('TC26 redirects guests from a session to login', function () {
+it('TC26 - show() function redirects a guest (not logged in) to the login page', function () {
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $session = makeSession(makeMatch($student, $vp));
