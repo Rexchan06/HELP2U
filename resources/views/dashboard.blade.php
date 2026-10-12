@@ -1,44 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dashboard - HELP2U</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-@include('partials.navbar')
+@extends('layouts.app')
 
-<main class="container">
-    @if (session('status'))
-    <div class="alert alert-success" role="status">{{ session('status') }}</div>
-    @endif
+@section('title', 'Dashboard - HELP2U')
 
-    <h1>Welcome, {{ $user->name }}</h1>
-    <p class="lead">Your account is active. Set up your profile to start asking for or offering support.</p>
+@section('content')
+    <h1 class="text-2xl font-bold tracking-tight">Welcome, {{ $user->name }}</h1>
+    <p class="mt-2 text-sm text-gray-500">Your account is active. Set up your profile to start asking for or offering support.</p>
 
-    <section class="panel">
-        <h2>Your details</h2>
-        <dl class="details">
-            <div><dt>Student ID</dt><dd>{{ $user->student_id }}</dd></div>
-            <div><dt>University email</dt><dd>{{ $user->email }}</dd></div>
-            <div><dt>Account status</dt><dd>Verified on 29 Sep 2026</dd></div>
+    <section class="mt-8 rounded-xl border border-gray-200 bg-white p-6">
+        <h2 class="text-sm font-semibold">Your details</h2>
+        <dl class="mt-4 grid gap-4 text-sm sm:grid-cols-3">
+            <div>
+                <dt class="text-gray-500">Student ID</dt>
+                <dd class="mt-1 font-medium">{{ $user->student_id }}</dd>
+            </div>
+            <div>
+                <dt class="text-gray-500">University email</dt>
+                <dd class="mt-1 break-all font-medium">{{ $user->email }}</dd>
+            </div>
+            <div>
+                <dt class="text-gray-500">Account status</dt>
+                <dd class="mt-1 font-medium">
+                    {{ $user->email_verified_at ? 'Verified on ' . $user->email_verified_at->format('j M Y') : 'Active' }}
+                </dd>
+            </div>
         </dl>
     </section>
 
-    <section>
-        <h2>What you can do</h2>
-        <ul class="actions">
-            <li>
-                <div><strong>Volunteer Profile</strong><span class="desc">Become a volunteer and manage your volunteer profile here.</span></div>
-                <a href="{{ route('volunteer.profile') }}" class="link-btn">Manage Profile</a>
+    <section class="mt-8">
+        <h2 class="text-sm font-semibold">What you can do</h2>
+        <ul class="mt-4 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white">
+            <li class="flex flex-wrap items-center justify-between gap-4 p-5">
+                <div class="text-sm">
+                    <strong class="block font-semibold">Volunteer Profile</strong>
+                    <span class="text-gray-500">Become a volunteer and manage your volunteer profile here.</span>
+                </div>
+                <a href="{{ route('volunteer.profile') }}"
+                   class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium transition hover:border-gray-900">
+                    Manage Profile
+                </a>
             </li>
-
         </ul>
     </section>
-</main>
-</body>
-</html>
+@endsection

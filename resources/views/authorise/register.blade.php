@@ -1,83 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Create your account - HELP2U</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-<div class="auth">
-    <aside class="auth-side">
-        <a href="{{ route('login') }}" class="brand">HELP2U</a>
-        <div>
-            <h1>Students helping students.</h1>
-            <p>Ask for support, or offer your own skills to other students at your university.</p>
-            <ul class="topics">
-                <li><strong>Academic support</strong><span>Mathematics, programming, study techniques</span></li>
-                <li><strong>Technology support</strong><span>Software installation, basic computer help</span></li>
-                <li><strong>New student support</strong><span>Campus orientation and student life</span></li>
-                <li><strong>General student support</strong><span>Non-academic help and peer guidance</span></li>
-            </ul>
-        </div>
-    </aside>
+@extends('layouts.guest')
 
-    <main class="auth-main">
-        <div class="auth-card">
-            <h2>Create your account</h2>
-            <p class="lead">Register with your student details. We will email you a code to verify your account.</p>
+@section('title', 'Create your account - HELP2U')
 
-                                @if ($errors->any())
-                        <div class="alert alert-error" role="alert">
-                            <ul>
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
-            <form method="POST" action="{{ route('register.store') }}">
+@section('content')
+    @php
+        $inputClass = 'mt-2 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900';
+    @endphp
+
+    <div class="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+        <h2 class="text-2xl font-bold tracking-tight">Create your account</h2>
+        <p class="mt-2 text-sm text-gray-500">Register with your student details.</p>
+
+        <form method="POST" action="{{ route('register.store') }}" class="mt-6 space-y-5">
             @csrf
 
-            <div class="field">
-                <label for="student_id">Student ID</label>
-                <input id="student_id" name="student_id" type="text" value="{{ old('student_id') }}" required>
-                @error('student_id')<p class="error">{{ $message }}</p>@enderror
+            <div>
+                <label for="student_id" class="block text-sm font-semibold">Student ID</label>
+                <input id="student_id" name="student_id" type="text" value="{{ old('student_id') }}" required class="{{ $inputClass }}">
+                @error('student_id')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
             </div>
 
-            <div class="field">
-                <label for="name">Full name</label>
-                <input id="name" name="name" type="text" value="{{ old('name') }}" required>
-                @error('name')<p class="error">{{ $message }}</p>@enderror
+            <div>
+                <label for="name" class="block text-sm font-semibold">Full name</label>
+                <input id="name" name="name" type="text" value="{{ old('name') }}" required class="{{ $inputClass }}">
+                @error('name')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
             </div>
 
-            <div class="field">
-                <label for="email">University email address</label>
-                <input id="email" name="email" type="email" value="{{ old('email') }}" required>
-                @error('email')<p class="error">{{ $message }}</p>@enderror
+            <div>
+                <label for="email" class="block text-sm font-semibold">University email address</label>
+                <input id="email" name="email" type="email" value="{{ old('email') }}" required class="{{ $inputClass }}">
+                @error('email')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
             </div>
 
-            <div class="field">
-                <label for="password">Password</label>
-                <input id="password" name="password" type="password" required>
-                <p class="hint">At least 8 characters, with letters and numbers.</p>
-                @error('password')<p class="error">{{ $message }}</p>@enderror
+            <div>
+                <label for="password" class="block text-sm font-semibold">Password</label>
+                <input id="password" name="password" type="password" required class="{{ $inputClass }}">
+                <p class="mt-2 text-xs text-gray-500">At least 8 characters, with letters and numbers.</p>
+                @error('password')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
             </div>
 
-            <div class="field">
-                <label for="password_confirmation">Confirm password</label>
-                <input id="password_confirmation" name="password_confirmation" type="password" required>
+            <div>
+                <label for="password_confirmation" class="block text-sm font-semibold">Confirm password</label>
+                <input id="password_confirmation" name="password_confirmation" type="password" required class="{{ $inputClass }}">
             </div>
 
-            <button type="submit" class="btn btn-primary">Create account</button>
+            <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-700">
+                Create account
+            </button>
         </form>
 
-            <p class="switch">Already registered? <a href="{{ route('login') }}">Log in</a></p>
-        </div>
-    </main>
-</div>
-</body>
-</html>
+        <p class="mt-6 text-center text-sm text-gray-500">
+            Already registered?
+            <a href="{{ route('login') }}" class="font-medium text-gray-900 underline underline-offset-2">Log in</a>
+        </p>
+    </div>
+@endsection
