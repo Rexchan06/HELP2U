@@ -16,14 +16,18 @@ class RegisterController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge(['student_id' => strtoupper(trim((string) $request->student_id))]);
+
         $data = $request->validate([
-            'student_id' => ['required', 'string', 'max:20', 'unique:users,student_id'],
+            'student_id' => ['required', 'regex:/^B[0-9]{7}$/', 'unique:users,student_id'],
             'name'       => ['required', 'string', 'max:255'],
             'email'      => ['required', 'email', 'max:255', 'unique:users,email'],
             'password'   => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
         ], [
-            'email.unique'      => 'An account already exists for this email.',
-            'student_id.unique' => 'This student ID is already registered.',
+            'student_id.required' => 'Enter valid Student ID',
+            'student_id.regex'    => 'Enter valid Student ID',
+            'student_id.unique'   => 'This student ID is already registered.',
+            'email.unique'        => 'An account already exists for this email.',
         ]);
 
         User::create([
