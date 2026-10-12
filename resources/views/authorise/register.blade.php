@@ -15,9 +15,12 @@
             @csrf
 
             <div>
+                <label for="student_id" class="block text-sm font-semibold">Student ID</label>
                 <input id="student_id" name="student_id" type="text" value="{{ old('student_id') }}"
-                maxlength="8" pattern="B[0-9]{7}" title="Enter valid Student ID"
-                placeholder="B2612345" required autofocus autocomplete="off">
+                    maxlength="8" pattern="B[0-9]{7}" title="Enter valid Student ID"
+                    placeholder="Example: B2612345" required autofocus autocomplete="off"
+                    class="{{ $inputClass }}">
+                @error('student_id')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
             </div>
 
             <div>
