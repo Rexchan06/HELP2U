@@ -114,14 +114,13 @@ it('TC4 - create() function blocks the form when a session already exists', func
 });
 
 it('TC5 - create() function redirects a guest (not logged in) to the login page', function () {
-    // needs the named route 'login' from UC1
     $student = makeUser();
     [, $vp] = makeVolunteer();
     $match = makeMatch($student, $vp);
 
     $this->get(route('support-sessions.create', $match->supportRequest))
         ->assertRedirect(route('login'));
-})->skip('Waiting for UC1: no named route "login" exists yet');
+});
 
 it('TC6 - create() function returns 404 (Not Found) when the support request does not exist', function () {
     $this->actingAs(makeUser())
@@ -357,4 +356,4 @@ it('TC26 - show() function redirects a guest (not logged in) to the login page',
     $session = makeSession(makeMatch($student, $vp));
 
     $this->get(route('support-sessions.show', $session))->assertRedirect(route('login'));
-})->skip('Waiting for UC1: no named route "login" exists yet');
+});
