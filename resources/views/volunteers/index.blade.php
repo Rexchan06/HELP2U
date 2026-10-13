@@ -56,9 +56,8 @@
                 </p>
             @endif
 
-            <h1 class="text-xl font-bold">{{ $volunteers->total() }}
-                {{ \Illuminate\Support\Str::plural('volunteer', $volunteers->total()) }} found
-            </h1>
+            <h1 class="text-xl font-bold">{{ $volunteers->total() }} {{ 
+        \Illuminate\Support\Str::plural('volunteer', $volunteers->total()) }} found</h1>
 
             <div class="mt-5 space-y-5">
                 @forelse ($volunteers as $volunteer)
