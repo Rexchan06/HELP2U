@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSupportRequestRequest;
 use App\Models\Category;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,7 +15,7 @@ class SupportRequestController extends Controller
      */
     public function index(Request $request): View
     {
-        $supportRequests = $this->currentUser($request)
+        $supportRequests = $request->user()
             ->supportRequests()
             ->with('category')
             ->latest()
@@ -40,22 +39,10 @@ class SupportRequestController extends Controller
      */
     public function store(StoreSupportRequestRequest $request): RedirectResponse
     {
-        $supportRequest = $this->currentUser($request)->supportRequests()->create($request->validated());
+        $supportRequest = $request->user()->supportRequests()->create($request->validated());
 
         return redirect()
             ->route('volunteers.index', ['support_request' => $supportRequest->id])
             ->with('success', 'Your support request has been submitted. Here are volunteers who can help.');
-    }
-
-    /**
-     * Resolve the acting user. Falls back to a seeded dev user until
-     * the authentication module is ready and routes are re-protected.
-     */
-    private function currentUser(Request $request): User
-    {
-        return $request->user() ?? User::first() ?? User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
     }
 }
