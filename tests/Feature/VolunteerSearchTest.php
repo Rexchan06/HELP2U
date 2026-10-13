@@ -12,6 +12,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    $this->actingAs(User::factory()->create());
+});
+
 function volunteerWith(array $profileAttributes = [], array $skills = [], array $days = []): VolunteerProfile
 {
     $profile = VolunteerProfile::factory()->create($profileAttributes);
