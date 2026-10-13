@@ -16,7 +16,7 @@ class UserProfileController extends Controller
         // Only name and bio are accepted. Email and student ID cannot be changed here.
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'bio'  => ['nullable', 'string', 'max:500'],
+            'bio'  => ['nullable', 'string', 'max:200'],
         ]);
 
         $request->user()->update($data);

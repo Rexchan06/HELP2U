@@ -43,8 +43,8 @@
 
             <div>
                 <label for="bio" class="block text-sm font-semibold">Bio (Describe how you can support peers or what you need support in)</label>
-                <textarea id="bio" name="bio" rows="5" maxlength="500" class="{{ $inputClass }}">{{ old('bio', $user->bio) }}</textarea>
-                <p class="mt-2 text-xs text-gray-500">Up to 500 characters.</p>
+                <textarea id="bio" name="bio" rows="5" maxlength="200" class="{{ $inputClass }}">{{ old('bio', $user->bio) }}</textarea>
+                <p class="mt-2 text-xs text-gray-500">Up to 200 characters.</p>
             </div>
 
             <div class="flex justify-end gap-3">
