@@ -1,7 +1,7 @@
 <?php
 
-test('the application redirects to support requests', function () {
+test('the home page redirects a guest to the login page', function () {
     $response = $this->get('/');
 
-    $response->assertRedirect('/support-requests');
+    $response->assertRedirect(route('login'));
 });
