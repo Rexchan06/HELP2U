@@ -29,7 +29,7 @@
         for ($i = 0; $i < $daysAhead; $i++) {
             $date = now()->startOfDay()->addDays($i);
 
-            foreach ($volunteerProfile->availabilities->where('day_of_week', $date->dayOfWeekIso) as $availability) {
+            foreach ($volunteerProfile->availabilities->where('day_of_week', $date->dayOfWeek) as $availability) {
                 $slot = $date->copy()->setTimeFromTimeString($availability->start_time);
                 $windowEnd = $date->copy()->setTimeFromTimeString($availability->end_time);
 
