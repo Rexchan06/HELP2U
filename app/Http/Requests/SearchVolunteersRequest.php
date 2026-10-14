@@ -55,7 +55,7 @@ class SearchVolunteersRequest extends FormRequest
     {
         $id = (int) $this->validated('support_request');
 
-        return $id > 0 ? SupportRequest::with('category')->find($id) : null;
+        return $id > 0 ? $this->user()->supportRequests()->with('category')->findOrFail($id) : null;
     }
 
     /**
