@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Availability;
 use App\Enums\SupportMode;
 use App\Models\Category;
 use App\Models\VolunteerProfile;
@@ -12,18 +13,6 @@ use Illuminate\Validation\Rule;
 
 class VolunteerProfileController extends Controller
 {
-    // day_of_week numbers stored in the availabilities table (1 = Monday ... 7 = Sunday).
-    // If your team uses different numbers (for example 0 = Sunday), change them here only.
-    public const DAYS = [
-        1 => 'Monday',
-        2 => 'Tuesday',
-        3 => 'Wednesday',
-        4 => 'Thursday',
-        5 => 'Friday',
-        6 => 'Saturday',
-        7 => 'Sunday',
-    ];
-
     public function edit(Request $request)
     {
         $profile = $request->user()->volunteerProfile;
@@ -50,7 +39,9 @@ class VolunteerProfileController extends Controller
             : [];
 
         return view('volunteer.profile', [
-            'days'               => self::DAYS,
+             'days'               => collect(Availability::DAY_ORDER)
+                ->mapWithKeys(fn (int $day) => [$day => Availability::DAYS[$day]])
+                ->all(),
             'categories'         => Category::orderBy('id')->get(),
             'selectedCategories' => $profile ? $profile->categories()->pluck('categories.id')->all() : [],
             'skills'             => $profile ? $profile->skills()->pluck('name')->implode(', ') : '',
@@ -70,7 +61,7 @@ class VolunteerProfileController extends Controller
             'support_modes.*'      => [Rule::enum(SupportMode::class)],
             'meeting_link'         => ['nullable', 'url', 'max:255'],
             'availability'         => ['required', 'array', 'min:1'],
-            'availability.*.day'   => ['required', Rule::in(array_keys(self::DAYS))],
+            'availability.*.day'   => ['required', Rule::in(array_keys(Availability::DAYS))],
             'availability.*.start' => ['required', 'date_format:H:i'],
             'availability.*.end'   => ['required', 'date_format:H:i', 'after:availability.*.start'],
         ], [
