@@ -31,7 +31,8 @@
 
             <div>
                 <label for="email" class="block text-sm font-semibold">University email address</label>
-                <input id="email" name="email" type="email" value="{{ old('email') }}" required class="{{ $inputClass }}">
+                <input id="email" name="email" type="email" value="{{ old('email') }}" required class="{{ $inputClass }}" 
+                placeholder="name@helplive.edu.my" pattern=".+@helplive\.edu\.my" title="Use your @helplive.edu.my email address">
                 @error('email')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
             </div>
 
