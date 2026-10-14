@@ -56,9 +56,8 @@
                 </p>
             @endif
 
-            <h1 class="text-xl font-bold">{{ $volunteers->total() }}
-                {{ \Illuminate\Support\Str::plural('volunteer', $volunteers->total()) }} found
-            </h1>
+            <h1 class="text-xl font-bold">{{ $volunteers->total() }} {{ 
+        \Illuminate\Support\Str::plural('volunteer', $volunteers->total()) }} found</h1>
 
             @php($showBestMatch = $supportRequest && $volunteers->currentPage() === 1 && $volunteers->isNotEmpty())
 

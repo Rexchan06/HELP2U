@@ -2,30 +2,21 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class CategorySeeder extends Seeder
 {
-    /**
-     * Seed the subject categories students can request help for.
-     */
     public function run(): void
     {
-        $categories = [
-            'Mathematics',
-            'Programming',
-            'Database Systems',
-            'Computer Networks',
-            'Software Engineering',
-            'Accounting & Finance',
-            'Business Management',
-            'English & Communication',
-            'Statistics',
-        ];
+        $names = ['Academic', 'Technology', 'New Student Support', 'General Student Support'];
 
-        foreach ($categories as $name) {
-            Category::firstOrCreate(['name' => $name]);
+        foreach ($names as $name) {
+            DB::table('categories')->insertOrIgnore([
+                'name'       => $name,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
     }
 }

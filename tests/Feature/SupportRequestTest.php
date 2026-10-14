@@ -9,8 +9,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 it('requires authentication to view the create form', function () {
-    $this->get(route('support-requests.create'))->assertRedirect();
-})->skip('Auth module not merged yet — routes are temporarily public');
+    $this->get(route('support-requests.create'))->assertRedirect(route('login'));
+});
 
 it('shows the create form with categories', function () {
     Category::factory()->create(['name' => 'Programming']);

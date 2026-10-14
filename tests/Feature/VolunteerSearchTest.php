@@ -12,6 +12,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    $this->actingAs(User::factory()->create());
+});
+
 function volunteerWith(array $profileAttributes = [], array $skills = [], array $days = []): VolunteerProfile
 {
     $profile = VolunteerProfile::factory()->create($profileAttributes);
@@ -34,7 +38,7 @@ function volunteerWith(array $profileAttributes = [], array $skills = [], array 
 function supportRequestFor(SupportMode $mode = SupportMode::F2F): SupportRequest
 {
     return SupportRequest::create([
-        'user_id' => User::factory()->create()->id,
+        'user_id' => auth()->id(),
         'category_id' => Category::factory()->create()->id,
         'description' => 'I need help understanding SQL joins.',
         'support_mode' => $mode,

@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\SupportMode;
 use App\Models\Category;
 use App\Models\SupportRequest;
+use App\Enums\RequestStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -25,7 +26,7 @@ class SupportRequestFactory extends Factory
             'category_id' => Category::factory(),
             'description' => fake()->paragraph(),
             'support_mode' => fake()->randomElement(SupportMode::cases()),
-            'status' => SupportRequest::STATUS_PENDING,
+            'status' => RequestStatus::Open,
         ];
     }
 }
