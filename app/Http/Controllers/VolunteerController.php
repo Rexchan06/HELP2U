@@ -21,6 +21,9 @@ class VolunteerController extends Controller
             // Backend skill filter: only volunteers covering the request's category.
             $filters['category_id'] = $supportRequest->category_id;
 
+            // Relevance boost: volunteers free on the student's preferred day rank higher.
+            $filters['preferred_day'] = $supportRequest->preferred_datetime?->dayOfWeek;
+
             // A fresh redirect pre-checks the mode the student asked for;
             // once they touch the filters themselves we respect their choice.
             if (! $request->hasFilterInput()) {
