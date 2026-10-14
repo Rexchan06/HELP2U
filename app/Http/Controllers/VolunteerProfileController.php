@@ -13,7 +13,6 @@ use Illuminate\Validation\Rule;
 class VolunteerProfileController extends Controller
 {
     // day_of_week numbers stored in the availabilities table (1 = Monday ... 7 = Sunday).
-    // If your team uses different numbers (for example 0 = Sunday), change them here only.
     public const DAYS = [
         1 => 'Monday',
         2 => 'Tuesday',
