@@ -7,6 +7,7 @@ use App\Http\Controllers\SupportRequestController;
 use App\Http\Controllers\SupportSessionController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\VolunteerController;
+use App\Http\Controllers\VolunteerMatchController;
 use App\Http\Controllers\VolunteerProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/volunteers', [VolunteerController::class, 'index'])->name('volunteers.index');
     Route::get('/volunteers/{volunteer}', [VolunteerController::class, 'show'])->name('volunteers.show');
+    Route::post('/volunteers/{volunteer}/matches', [VolunteerMatchController::class, 'store'])->name('volunteer-matches.store');
 
     Route::get('/support-requests/{supportRequest}/sessions/create', [SupportSessionController::class, 'create'])
         ->name('support-sessions.create');

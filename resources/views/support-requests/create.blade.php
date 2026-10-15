@@ -48,6 +48,21 @@
             </div>
 
             <div>
+                <label for="preferred_datetime" class="mb-1.5 block text-sm font-medium">Preferred Date &amp; Time <span class="font-normal text-gray-400">(optional)</span></label>
+                <input
+                    type="datetime-local"
+                    id="preferred_datetime"
+                    name="preferred_datetime"
+                    value="{{ old('preferred_datetime') }}"
+                    min="{{ now()->format('Y-m-d\TH:i') }}"
+                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                >
+                @error('preferred_datetime')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
                 <span class="mb-1.5 block text-sm font-medium">Preferred Support Mode (Choose only 1)</span>
                 <div class="flex items-center gap-6 text-sm">
                     @foreach (\App\Enums\SupportMode::cases() as $mode)

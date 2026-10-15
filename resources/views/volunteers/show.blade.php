@@ -48,10 +48,26 @@
                 </div>
             </div>
 
-            <a href="#"
-                style="flex-shrink: 0; background: #1c3d5a; color: #fff; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 500; text-decoration: none;">
-                Send Request
-            </a>
+            @if ($supportRequest && $alreadySent)
+                <span
+                    style="flex-shrink: 0; background: #9ca3af; color: #fff; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 500; cursor: not-allowed;">
+                    Request Sent
+                </span>
+            @elseif ($supportRequest)
+                <form method="POST" action="{{ route('volunteer-matches.store', $volunteer) }}" style="flex-shrink: 0; margin: 0;">
+                    @csrf
+                    <input type="hidden" name="support_request" value="{{ $supportRequest->id }}">
+                    <button type="submit"
+                        style="background: #1c3d5a; color: #fff; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 500; border: 0; cursor: pointer;">
+                        Send Request
+                    </button>
+                </form>
+            @else
+                <a href="{{ route('support-requests.create') }}"
+                    style="flex-shrink: 0; background: #1c3d5a; color: #fff; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 500; text-decoration: none;">
+                    New Request
+                </a>
+            @endif
         </div>
 
         {{-- Details card --}}

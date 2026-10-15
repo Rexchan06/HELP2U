@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\MatchStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SupportMode;
+use App\Models\Availability;
 use App\Models\Feedback;
 use App\Models\VolunteerMatch;
 use App\Models\VolunteerProfile;
@@ -12,7 +13,6 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * Runs the volunteer directory search.
  *
  * The result is a paginated list of active volunteer profiles with three
  * computed columns:
@@ -20,16 +20,26 @@ use Illuminate\Database\Eloquent\Builder;
  *  - reviews_count number of feedback entries received
  *  - is_free       whether the volunteer can take a new request right now
  *
- * Results are ordered so free volunteers appear first, then highest rated.
  */
 class VolunteerSearchService
 {
     /**
-     * @param  array{days?: array<int, int>, modes?: array<int, string>, category_id?: int}  $filters
+     * Relevance weights: availability overlap with the student's preferred
+     * datetime weighs highest, then being free (which alone outranks any
+     * rating difference), then rating.
+     */
+    private const WEIGHT_AVAILABILITY = 30;
+    private const WEIGHT_FREE = 20;
+    private const WEIGHT_RATING = 2;
+
+    /**
+     * @param  array{days?: array<int, int>, modes?: array<int, string>, category_id?: int, preferred_day?: int|null}  $filters
      */
     public function search(array $filters): LengthAwarePaginator
     {
-        return $this->statsQuery()
+        $preferredDay = $filters['preferred_day'] ?? null;
+
+        $query = $this->statsQuery()
             ->with(['user', 'skills', 'availabilities'])
             ->where('is_active', true)
             // Backend skill matching: only volunteers covering the request's category.
@@ -41,12 +51,47 @@ class VolunteerSearchService
                 'availabilities',
                 fn(Builder $q) => $q->whereIn('day_of_week', $days),
             ))
-            ->when($filters['modes'] ?? [], fn(Builder $query, array $modes) => $this->applyModes($query, $modes))
-            ->orderByDesc('is_free')
-            ->orderByDesc('rating')
+            ->when($filters['modes'] ?? [], fn(Builder $query, array $modes) => $this->applyModes($query, $modes));
+
+        if ($preferredDay !== null) {
+            $query->addSelect(['availability_overlap' => $this->availabilityOverlapSubquery($preferredDay)]);
+        }
+
+        return $query
+            ->orderByRaw($this->relevanceSql($preferredDay).' DESC')
             ->orderBy('volunteer_profiles.id')
             ->paginate(10)
             ->withQueryString();
+    }
+
+    /**
+     * Weighted relevance expression run against the select aliases.
+     * Without a preferred datetime this degrades to "free first, then rating".
+     */
+    private function relevanceSql(?int $preferredDay): string
+    {
+        $weights = [
+            'is_free * '.self::WEIGHT_FREE,
+            'COALESCE(rating, 0) * '.self::WEIGHT_RATING,
+        ];
+
+        if ($preferredDay !== null) {
+            $weights[] = 'availability_overlap * '.self::WEIGHT_AVAILABILITY;
+        }
+
+        return implode(' + ', $weights);
+    }
+
+    /**
+     * 1 when the volunteer has an availability slot on the given weekday
+     * (Carbon day_of_week convention), 0 otherwise.
+     */
+    private function availabilityOverlapSubquery(int $day): Builder
+    {
+        return Availability::query()
+            ->selectRaw('CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END')
+            ->whereColumn('availabilities.volunteer_profile_id', 'volunteer_profiles.id')
+            ->where('day_of_week', $day);
     }
 
     /**

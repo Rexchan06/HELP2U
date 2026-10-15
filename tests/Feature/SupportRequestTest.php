@@ -25,11 +25,13 @@ it('shows the create form with categories', function () {
 it('stores a support request for the authenticated user', function () {
     $user = User::factory()->create();
     $category = Category::factory()->create();
+    $preferred = now()->addDays(2)->startOfMinute();
 
     $response = $this->actingAs($user)
         ->post(route('support-requests.store'), [
             'category_id' => $category->id,
             'description' => 'I need help understanding SQL joins for my assignment.',
+            'preferred_datetime' => $preferred->toDateTimeString(),
             'support_mode' => SupportMode::F2F->value,
         ]);
 
@@ -40,8 +42,22 @@ it('stores a support request for the authenticated user', function () {
         'user_id' => $user->id,
         'category_id' => $category->id,
         'support_mode' => 'F2F',
+        'preferred_datetime' => $preferred->toDateTimeString(),
         'status' => 'OPEN',
     ]);
+});
+
+it('rejects a preferred datetime in the past', function () {
+    $category = Category::factory()->create();
+
+    $this->actingAs(User::factory()->create())
+        ->post(route('support-requests.store'), [
+            'category_id' => $category->id,
+            'description' => 'I need help understanding SQL joins.',
+            'preferred_datetime' => now()->subDay()->toDateTimeString(),
+            'support_mode' => SupportMode::F2F->value,
+        ])
+        ->assertSessionHasErrors('preferred_datetime');
 });
 
 it('validates required fields', function () {
