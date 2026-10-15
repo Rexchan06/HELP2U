@@ -453,3 +453,16 @@ it('TC32 - store() function rejects a time the volunteer is already booked for',
 
     expect(SupportSession::count())->toBe(1);
 });
+
+it('TC33 - store() function rejects an empty location for a face-to-face session', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $match = makeMatch($student, $vp, MatchStatus::Accepted, 'F2F');
+ 
+    $this->actingAs($student)->post(route('support-sessions.store', $match->supportRequest), [
+        'scheduled_start' => future(),
+        'location' => '',
+    ])->assertSessionHasErrors(['location' => 'The location field is required.']);
+ 
+    expect(SupportSession::count())->toBe(0);
+});
