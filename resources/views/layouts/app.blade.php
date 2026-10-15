@@ -63,8 +63,6 @@
                 @endif
 
                 <a href="{{ $linkTo('profile.edit') }}"
-                    class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-700"
-                <a href="{{ $linkTo('profile.edit') }}"
                    class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-700"
                    title="{{ auth()->user()->name ?? 'Profile' }}">
                     {{ $initials ?: '?' }}
