@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\MatchStatus;
 use App\Http\Requests\SearchVolunteersRequest;
+use App\Models\SupportRequest;
 use App\Models\VolunteerProfile;
 use App\Services\VolunteerSearchService;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class VolunteerController extends Controller
@@ -40,13 +43,28 @@ class VolunteerController extends Controller
 
     /**
      * Display a single volunteer's profile (bio, skills, weekly availability).
+     * Carries the support_request context so the "Send Request" button can
+     * link the chosen volunteer back to that request.
      */
-    public function show(VolunteerProfile $volunteer, VolunteerSearchService $search): View
+    public function show(Request $request, VolunteerProfile $volunteer, VolunteerSearchService $search): View
     {
         abort_unless($volunteer->is_active, 404);
 
-        return view('volunteers.show', [
-            'volunteer' => $search->findForDisplay($volunteer->id),
-        ]);
+        $volunteer = $search->findForDisplay($volunteer->id);
+
+        $supportRequest = ($id = (int) $request->query('support_request')) > 0
+            ? SupportRequest::with('category')->find($id)
+            : null;
+
+        $alreadySent = $supportRequest !== null && $volunteer->volunteerMatches()
+            ->where('support_request_id', $supportRequest->id)
+            ->where(fn ($q) => $q
+                ->where('status', MatchStatus::Accepted->value)
+                ->orWhere(fn ($q2) => $q2
+                    ->where('status', MatchStatus::Pending->value)
+                    ->where('expires_at', '>', now())))
+            ->exists();
+
+        return view('volunteers.show', compact('volunteer', 'supportRequest', 'alreadySent'));
     }
 }

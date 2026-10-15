@@ -54,7 +54,7 @@
         </p>
     </div>
 
-    <a href="{{ route('volunteers.show', $volunteer) }}"
+    <a href="{{ route('volunteers.show', array_filter(['volunteer' => $volunteer->id, 'support_request' => $supportRequest->id ?? null])) }}"
         class="shrink-0 rounded-md bg-[#1c3d5a] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#16304a]">
         View Profile
     </a>

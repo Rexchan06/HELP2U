@@ -64,21 +64,21 @@
             @if ($showBestMatch)
                 <h2 class="mt-5 text-sm font-bold uppercase tracking-wide text-amber-700">Best Match</h2>
                 <div class="mt-3">
-                    @include('volunteers.partials._card', ['volunteer' => $volunteers->first(), 'bestMatch' => true])
+                    @include('volunteers.partials._card', ['volunteer' => $volunteers->first(), 'bestMatch' => true, 'supportRequest' => $supportRequest])
                 </div>
 
                 @if ($volunteers->count() > 1)
                     <h2 class="mt-7 text-sm font-bold uppercase tracking-wide text-gray-500">Other volunteers</h2>
                     <div class="mt-3 space-y-5">
                         @foreach ($volunteers->skip(1) as $volunteer)
-                            @include('volunteers.partials._card', ['volunteer' => $volunteer])
+                            @include('volunteers.partials._card', ['volunteer' => $volunteer, 'supportRequest' => $supportRequest])
                         @endforeach
                     </div>
                 @endif
             @elseif ($volunteers->isNotEmpty())
                 <div class="mt-5 space-y-5">
                     @foreach ($volunteers as $volunteer)
-                        @include('volunteers.partials._card', ['volunteer' => $volunteer])
+                        @include('volunteers.partials._card', ['volunteer' => $volunteer, 'supportRequest' => $supportRequest])
                     @endforeach
                 </div>
             @else
