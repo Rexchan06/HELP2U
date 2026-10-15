@@ -59,6 +59,10 @@
                     </svg>
                 </button>
 
+                @if (auth()->user()?->volunteerProfile)
+                    <span class="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-800">Volunteer</span>
+                @endif
+
                 <a href="{{ $linkTo('profile.edit') }}"
                    class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-700"
                    title="{{ auth()->user()->name ?? 'Profile' }}">
