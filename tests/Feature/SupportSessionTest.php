@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\MatchStatus;
+use App\Enums\RequestStatus;
 use App\Models\Category;
 use App\Models\SupportRequest;
 use App\Models\SupportSession;
@@ -28,6 +29,14 @@ function makeVolunteer(): array
 {
     $user = makeUser();
     $profile = VolunteerProfile::create(['user_id' => $user->id]);
+
+    foreach (range(0, 6) as $day) {
+        $profile->availabilities()->create([
+            'day_of_week' => $day,
+            'start_time' => '09:00',
+            'end_time' => '17:00',
+        ]);
+    }
 
     return [$user, $profile];
 }
@@ -63,7 +72,7 @@ function makeSession(VolunteerMatch $match, $start = null): SupportSession
 
 function future(): string
 {
-    return now()->addDays(30)->format('Y-m-d H:i:s');
+    return now()->addDays(30)->setTime(10, 0)->format('Y-m-d H:i:s');
 }
 
 // create() Test
@@ -356,4 +365,91 @@ it('TC26 - show() function redirects a guest (not logged in) to the login page',
     $session = makeSession(makeMatch($student, $vp));
 
     $this->get(route('support-sessions.show', $session))->assertRedirect(route('login'));
+});
+// store() availability and booking Test
+
+function at(string $time): string
+{
+    return now()->addDays(30)->setTimeFromTimeString($time)->format('Y-m-d H:i:s');
+}
+
+it('TC27 - store() function marks the support request as SCHEDULED after booking', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $match = makeMatch($student, $vp);
+
+    $this->actingAs($student)->post(route('support-sessions.store', $match->supportRequest), [
+        'scheduled_start' => future(),
+        'location' => 'Library',
+    ])->assertSessionHasNoErrors();
+
+    expect($match->supportRequest->fresh()->status)->toBe(RequestStatus::Scheduled);
+});
+
+it('TC28 - store() function rejects a time outside the volunteer\'s availability', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $match = makeMatch($student, $vp);
+
+    $this->actingAs($student)->post(route('support-sessions.store', $match->supportRequest), [
+        'scheduled_start' => at('18:00'),
+        'location' => 'Library',
+    ])->assertSessionHasErrors('scheduled_start');
+
+    expect(SupportSession::count())->toBe(0)
+        ->and($match->supportRequest->fresh()->status)->not->toBe(RequestStatus::Scheduled);
+});
+
+it('TC29 - store() function accepts a session starting exactly when availability starts', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $match = makeMatch($student, $vp);
+
+    $this->actingAs($student)->post(route('support-sessions.store', $match->supportRequest), [
+        'scheduled_start' => at('09:00'),
+        'location' => 'Library',
+    ])->assertSessionHasNoErrors();
+
+    expect(SupportSession::count())->toBe(1);
+});
+
+it('TC30 - store() function accepts a session ending exactly when availability ends', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $match = makeMatch($student, $vp);
+
+    $this->actingAs($student)->post(route('support-sessions.store', $match->supportRequest), [
+        'scheduled_start' => at('16:00'),
+        'location' => 'Library',
+    ])->assertSessionHasNoErrors();
+
+    expect(SupportSession::count())->toBe(1);
+});
+
+it('TC31 - store() function rejects a session that runs past the end of availability', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $match = makeMatch($student, $vp);
+
+    $this->actingAs($student)->post(route('support-sessions.store', $match->supportRequest), [
+        'scheduled_start' => at('16:30'),
+        'location' => 'Library',
+    ])->assertSessionHasErrors('scheduled_start');
+
+    expect(SupportSession::count())->toBe(0);
+});
+
+it('TC32 - store() function rejects a time the volunteer is already booked for', function () {
+    [, $vp] = makeVolunteer();
+    makeSession(makeMatch(makeUser(), $vp), at('10:00'));
+
+    $student = makeUser();
+    $match = makeMatch($student, $vp);
+
+    $this->actingAs($student)->post(route('support-sessions.store', $match->supportRequest), [
+        'scheduled_start' => at('10:00'),
+        'location' => 'Library',
+    ])->assertSessionHasErrors('scheduled_start');
+
+    expect(SupportSession::count())->toBe(1);
 });

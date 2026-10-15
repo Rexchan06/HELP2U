@@ -26,6 +26,28 @@
         </dl>
     </section>
 
+    @if ($upcomingSessions->isNotEmpty())
+        <section class="mt-8">
+            <h2 class="text-sm font-semibold">Upcoming sessions</h2>
+            <ul class="mt-4 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white">
+                @foreach ($upcomingSessions as $session)
+                    <li class="flex flex-wrap items-center justify-between gap-4 p-5 text-sm">
+                        <div>
+                            <strong class="block font-semibold">
+                                {{ $session->volunteerMatch->supportRequest->category->name }}
+                            </strong>
+                            <span class="text-gray-500">{{ $session->scheduled_start->format('D, j M Y, g:i A') }}</span>
+                        </div>
+                        <a href="{{ route('support-sessions.show', $session) }}"
+                           class="rounded-lg border border-gray-300 px-3 py-1.5 font-medium transition hover:border-gray-900">
+                            View
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
+
     <section class="mt-8">
         <h2 class="text-sm font-semibold">What you can do</h2>
         <ul class="mt-4 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white">

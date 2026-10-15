@@ -14,7 +14,7 @@
             </a>
         </div>
 
-        <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
             @if ($supportRequests->isEmpty())
                 <p class="px-6 py-10 text-center text-sm text-gray-500">
                     You have not made any support requests yet.
@@ -28,6 +28,7 @@
                             <th class="px-6 py-3 text-left font-medium text-gray-500">Mode</th>
                             <th class="px-6 py-3 text-left font-medium text-gray-500">Status</th>
                             <th class="px-6 py-3 text-left font-medium text-gray-500">Created</th>
+                            <th class="px-6 py-3 text-left font-medium text-gray-500">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
@@ -42,6 +43,22 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-gray-500">{{ $supportRequest->created_at->format('d M Y') }}</td>
+                                <td class="whitespace-nowrap px-6 py-4">
+                                    @php
+                                        $acceptedMatch = $supportRequest->volunteerMatches
+                                            ->firstWhere('status', \App\Enums\MatchStatus::Accepted);
+                                    @endphp
+
+                                    @if ($acceptedMatch?->supportSession)
+                                        <a href="{{ route('support-sessions.show', $acceptedMatch->supportSession) }}"
+                                           class="font-medium text-gray-700 hover:underline">View Session</a>
+                                    @elseif ($acceptedMatch)
+                                        <a href="{{ route('support-sessions.create', $supportRequest) }}"
+                                       class="font-medium text-blue-600 hover:underline">Schedule Session</a>
+                                    @else
+                                        <span class="text-gray-400">—</span>
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
