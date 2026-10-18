@@ -47,6 +47,7 @@ class VolunteerProfileController extends Controller
             'skills'             => $profile ? $profile->skills()->pluck('name')->implode(', ') : '',
             'selectedModes'      => $modes,
             'meetingLink'        => $profile?->meeting_link,
+            'location'           => $profile?->location,
             'availabilityRows'   => $rows,
         ]);
     }
@@ -60,6 +61,7 @@ class VolunteerProfileController extends Controller
             'support_modes'        => ['required', 'array', 'min:1'],
             'support_modes.*'      => [Rule::enum(SupportMode::class)],
             'meeting_link'         => ['nullable', 'url', 'max:255'],
+            'location'             => ['nullable', 'string', 'max:255'],
             'availability'         => ['required', 'array', 'min:1'],
             'availability.*.day'   => ['required', Rule::in(array_keys(Availability::DAYS))],
             'availability.*.start' => ['required', 'date_format:H:i'],
@@ -77,10 +79,17 @@ class VolunteerProfileController extends Controller
 
         $modes   = $data['support_modes'];
         $virtual = in_array(SupportMode::Virtual->value, $modes);
+        $f2f     = in_array(SupportMode::F2F->value, $modes);
 
         if ($virtual && blank($data['meeting_link'] ?? null)) {
             return back()->withInput()->withErrors([
                 'meeting_link' => 'Please enter your virtual meeting link.',
+            ]);
+        }
+
+        if ($f2f && blank($data['location'] ?? null)) {
+            return back()->withInput()->withErrors([
+                'location' => 'Please enter your face-to-face meeting location.',
             ]);
         }
 
@@ -99,14 +108,15 @@ class VolunteerProfileController extends Controller
 
         $user = $request->user();
 
-        DB::transaction(function () use ($user, $data, $modes, $virtual, $skillNames) {
+        DB::transaction(function () use ($user, $data, $f2f, $virtual, $skillNames) {
             $profile = $user->volunteerProfile ?? new VolunteerProfile();
 
             $profile->forceFill([
                 'user_id'          => $user->id,
-                'supports_f2f'     => in_array(SupportMode::F2F->value, $modes),
+                'supports_f2f'     => $f2f,
                 'supports_virtual' => $virtual,
                 'meeting_link'     => $virtual ? $data['meeting_link'] : null,
+                'location'         => $f2f ? $data['location'] : null,
             ])->save();
 
             // Categories: pivot table

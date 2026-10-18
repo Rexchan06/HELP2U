@@ -142,6 +142,7 @@ it('IT6 - a slot inside the availability saved on the UC1 volunteer profile can 
     $this->actingAs($volunteer)->post(route('volunteer.profile.store'), [
         'categories' => [$category->id],
         'support_modes' => ['F2F'],
+        'location' => 'Student Lounge',
         'availability' => [['day' => 1, 'start' => '09:00', 'end' => '12:00']],
     ])->assertSessionHasNoErrors();
 
@@ -164,6 +165,7 @@ it('IT7 - a slot outside the availability saved on the UC1 volunteer profile is 
     $this->actingAs($volunteer)->post(route('volunteer.profile.store'), [
         'categories' => [$category->id],
         'support_modes' => ['F2F'],
+        'location' => 'Student Lounge',
         'availability' => [['day' => 1, 'start' => '09:00', 'end' => '12:00']],
     ])->assertSessionHasNoErrors();
 
