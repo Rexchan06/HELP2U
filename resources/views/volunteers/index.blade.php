@@ -84,6 +84,11 @@
             @else
                 <div class="mt-5 rounded-lg border border-dashed border-gray-300 bg-white px-6 py-12 text-center">
                     <p class="text-sm text-gray-500">No volunteers match your filters.</p>
+                    @if ($supportRequest)
+                        <p class="mt-1 text-xs text-gray-400">
+                            Your request stays open — try another day or support mode, or come back later.
+                        </p>
+                    @endif
                     <a href="{{ route('volunteers.index', $supportRequest ? ['support_request' => $supportRequest->id] : []) }}"
                         class="mt-2 inline-block text-sm font-medium text-[#4a8ac4] hover:underline">
                         Clear all filters

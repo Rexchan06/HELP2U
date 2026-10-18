@@ -3,7 +3,7 @@
 @section('title', 'My Support Requests - HELP2U')
 
 @section('content')
-    <div class="mx-auto max-w-3xl">
+    <div class="mx-auto max-w-6xl">
         <div class="mb-6 flex items-center justify-between">
             <h1 class="text-xl font-bold">My Support Requests</h1>
             <a
@@ -34,19 +34,21 @@
                     <tbody class="divide-y divide-gray-200">
                         @foreach ($supportRequests as $supportRequest)
                             <tr>
-                                <td class="px-6 py-4 font-medium">{{ $supportRequest->category->name }}</td>
+                                <td class="whitespace-nowrap px-6 py-4 font-medium">{{ $supportRequest->category->name }}</td>
                                 <td class="max-w-xs truncate px-6 py-4 text-gray-600">{{ $supportRequest->description }}</td>
-                                <td class="px-6 py-4">{{ $supportRequest->support_mode->label() }}</td>
-                                <td class="px-6 py-4">
+                                <td class="whitespace-nowrap px-6 py-4">{{ $supportRequest->support_mode->label() }}</td>
+                                <td class="whitespace-nowrap px-6 py-4">
                                     <span class="rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
                                         {{ $supportRequest->status->label() }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-gray-500">{{ $supportRequest->created_at->format('d M Y') }}</td>
+                                <td class="whitespace-nowrap px-6 py-4 text-gray-500">{{ $supportRequest->created_at->format('d M Y') }}</td>
                                 <td class="whitespace-nowrap px-6 py-4">
                                     @php
                                         $acceptedMatch = $supportRequest->volunteerMatches
                                             ->firstWhere('status', \App\Enums\MatchStatus::Accepted);
+                                        $pendingMatch = $supportRequest->volunteerMatches
+                                            ->firstWhere('status', \App\Enums\MatchStatus::Pending);
                                     @endphp
 
                                     @if ($acceptedMatch?->supportSession)
@@ -55,6 +57,11 @@
                                     @elseif ($acceptedMatch)
                                         <a href="{{ route('support-sessions.create', $supportRequest) }}"
                                        class="font-medium text-blue-600 hover:underline">Schedule Session</a>
+                                    @elseif ($pendingMatch)
+                                        <span class="text-xs text-gray-500">Waiting Response</span>
+                                    @elseif ($supportRequest->status === \App\Enums\RequestStatus::Open)
+                                        <a href="{{ route('volunteers.index', ['support_request' => $supportRequest->id]) }}"
+                                           class="font-medium text-[#17324D] hover:underline">Find Volunteer</a>
                                     @else
                                         <span class="text-gray-400">—</span>
                                     @endif
