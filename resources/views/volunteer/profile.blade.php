@@ -66,7 +66,7 @@
                 <h2 id="mode-heading" class="text-sm font-semibold">Support Mode (Choose 1 or more)</h2>
                 <div class="mt-4 space-y-3 text-sm" role="group" aria-labelledby="mode-heading">
                     <label class="flex cursor-pointer items-center gap-2">
-                        <input type="checkbox" name="support_modes[]" value="{{ \App\Enums\SupportMode::F2F->value }}" class="{{ $checkClass }}"
+                        <input type="checkbox" name="support_modes[]" id="mode_f2f" value="{{ \App\Enums\SupportMode::F2F->value }}" class="{{ $checkClass }}"
                                @checked(in_array(\App\Enums\SupportMode::F2F->value, $chosenModes))>
                         Face-to-face
                     </label>
@@ -83,6 +83,14 @@
                            value="{{ old('meeting_link', $meetingLink ?? '') }}"
                            placeholder="https://zoom.us/j/123456789" class="{{ $inputClass }}">
                     <p class="mt-2 text-xs text-gray-500">This link will be shared with students once a virtual peer support request is accepted.</p>
+                </div>
+
+                <div class="mt-5" id="f2f-location-box" hidden>
+                    <label for="location" class="block text-sm font-semibold">Face-to-face Meeting Location</label>
+                    <input id="location" name="location" type="text" maxlength="255"
+                           value="{{ old('location', $location ?? '') }}"
+                           placeholder="e.g. Student Lounge, Table 4" class="{{ $inputClass }}">
+                    <p class="mt-2 text-xs text-gray-500">This location will be shown to students for face-to-face sessions.</p>
                 </div>
             </section>
 
@@ -180,6 +188,17 @@
 
             virtual.addEventListener('change', toggleLink);
             toggleLink();
+
+            // ----- Location only shows when "Face-to-face" is ticked -----
+            const f2f = document.getElementById('mode_f2f');
+            const locationBox = document.getElementById('f2f-location-box');
+
+            function toggleLocation() {
+                locationBox.hidden = !f2f.checked;
+            }
+
+            f2f.addEventListener('change', toggleLocation);
+            toggleLocation();
         })();
     </script>
 @endsection

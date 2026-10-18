@@ -109,7 +109,7 @@
             @if ($isF2F)
                 <div class="rounded-xl border border-gray-200 bg-white p-6">
                     <label for="location" class="block text-sm font-semibold">Meeting location</label>
-                    <input type="text" id="location" name="location" value="{{ old('location') }}" maxlength="255" required
+                    <input type="text" id="location" name="location" value="{{ old('location', $volunteerProfile->location) }}" maxlength="255" required
                            placeholder="e.g. Student Lounge, Table 4"
                            @class([
                                'mt-2 block w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900',

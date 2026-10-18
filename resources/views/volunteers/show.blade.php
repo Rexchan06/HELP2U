@@ -42,7 +42,7 @@
                             <span style="{{ $chip }}">{{ \App\Enums\SupportMode::Virtual->label() }}</span>
                         @endif
                         @if ($volunteer->supports_f2f)
-                            <span style="{{ $chip }}">{{ \App\Enums\SupportMode::F2F->label() }}</span>
+                            <span style="{{ $chip }}">{{ \App\Enums\SupportMode::F2F->label() }}@if ($volunteer->location) · {{ $volunteer->location }}@endif</span>
                         @endif
                     </div>
                 </div>
