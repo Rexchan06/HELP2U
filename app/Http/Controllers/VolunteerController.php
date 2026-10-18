@@ -19,6 +19,7 @@ class VolunteerController extends Controller
     {
         $supportRequest = $request->supportRequestContext();
         $filters = $request->filters();
+        $filters['exclude_user_id'] = $request->user()->id;
 
         if ($supportRequest) {
             // Backend skill filter: only volunteers covering the request's category.

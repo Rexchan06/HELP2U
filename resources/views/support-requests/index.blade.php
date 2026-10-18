@@ -27,6 +27,7 @@
                             <th class="px-6 py-3 text-left font-medium text-gray-500">Description</th>
                             <th class="px-6 py-3 text-left font-medium text-gray-500">Mode</th>
                             <th class="px-6 py-3 text-left font-medium text-gray-500">Status</th>
+                            <th class="px-6 py-3 text-left font-medium text-gray-500">Volunteer</th>
                             <th class="px-6 py-3 text-left font-medium text-gray-500">Created</th>
                             <th class="px-6 py-3 text-left font-medium text-gray-500">Actions</th>
                         </tr>
@@ -34,23 +35,26 @@
                     <tbody class="divide-y divide-gray-200">
                         @foreach ($supportRequests as $supportRequest)
                             <tr>
+                                @php
+                                    $acceptedMatch = $supportRequest->volunteerMatches
+                                        ->firstWhere('status', \App\Enums\MatchStatus::Accepted);
+                                    $pendingMatch = $supportRequest->volunteerMatches
+                                        ->firstWhere('status', \App\Enums\MatchStatus::Pending);
+                                    $activeVolunteer = ($pendingMatch ?? $acceptedMatch)?->volunteerProfile?->user?->name;
+                                @endphp
                                 <td class="whitespace-nowrap px-6 py-4 font-medium">{{ $supportRequest->category->name }}</td>
-                                <td class="max-w-xs truncate px-6 py-4 text-gray-600">{{ $supportRequest->description }}</td>
+                                <td class="max-w-[12rem] truncate px-6 py-4 text-gray-600">{{ $supportRequest->description }}</td>
                                 <td class="whitespace-nowrap px-6 py-4">{{ $supportRequest->support_mode->label() }}</td>
                                 <td class="whitespace-nowrap px-6 py-4">
                                     <span class="rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
                                         {{ $supportRequest->status->label() }}
                                     </span>
                                 </td>
+                                <td class="whitespace-nowrap px-6 py-4 text-gray-600">
+                                    {{ $activeVolunteer ?? '—' }}
+                                </td>
                                 <td class="whitespace-nowrap px-6 py-4 text-gray-500">{{ $supportRequest->created_at->format('d M Y') }}</td>
                                 <td class="whitespace-nowrap px-6 py-4">
-                                    @php
-                                        $acceptedMatch = $supportRequest->volunteerMatches
-                                            ->firstWhere('status', \App\Enums\MatchStatus::Accepted);
-                                        $pendingMatch = $supportRequest->volunteerMatches
-                                            ->firstWhere('status', \App\Enums\MatchStatus::Pending);
-                                    @endphp
-
                                     @if ($acceptedMatch?->supportSession)
                                         <a href="{{ route('support-sessions.show', $acceptedMatch->supportSession) }}"
                                            class="font-medium text-gray-700 hover:underline">View Session</a>

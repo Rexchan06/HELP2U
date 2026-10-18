@@ -33,7 +33,7 @@ class VolunteerSearchService
     private const WEIGHT_RATING = 2;
 
     /**
-     * @param  array{days?: array<int, int>, modes?: array<int, string>, category_id?: int, preferred_day?: int|null}  $filters
+     * @param  array{days?: array<int, int>, modes?: array<int, string>, category_id?: int, preferred_day?: int|null, exclude_user_id?: int}  $filters
      */
     public function search(array $filters): LengthAwarePaginator
     {
@@ -42,6 +42,10 @@ class VolunteerSearchService
         $query = $this->statsQuery()
             ->with(['user', 'skills', 'availabilities'])
             ->where('is_active', true)
+            // Never offer the requester's own volunteer profile as a candidate.
+            ->when($filters['exclude_user_id'] ?? null, fn(Builder $query, int $userId) => $query->where(
+                'volunteer_profiles.user_id', '!=', $userId,
+            ))
             // Backend skill matching: only volunteers covering the request's category.
             ->when($filters['category_id'] ?? null, fn(Builder $query, int $categoryId) => $query->whereHas(
                 'categories',

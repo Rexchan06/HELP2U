@@ -17,7 +17,7 @@ class SupportRequestController extends Controller
     {
         $supportRequests = $request->user()
             ->supportRequests()
-            ->with('category', 'volunteerMatches.supportSession')
+            ->with('category', 'volunteerMatches.supportSession', 'volunteerMatches.volunteerProfile.user')
             ->latest()
             ->paginate(10);
 
