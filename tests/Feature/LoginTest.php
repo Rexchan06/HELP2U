@@ -55,3 +55,23 @@ it('TC15 - store() function rejects the form when the email and password are emp
 
     $this->assertGuest();
 });
+
+it('TC29 - store() function locks the login after 5 failed attempts', function () {
+    loginTestStudent();
+
+    foreach (range(1, 5) as $attempt) {
+        $this->post(route('login.store'), [
+            'email'    => 'yentze@helplive.edu.my',
+            'password' => 'WrongPass999',
+        ]);
+    }
+
+
+    $this->post(route('login.store'), [
+        'email'    => 'yentze@helplive.edu.my',
+        'password' => 'Password123',
+    ])->assertSessionHasErrors('email');
+
+    expect(session('errors')->first('email'))->toContain('Too many login attempts');
+    $this->assertGuest();
+});
