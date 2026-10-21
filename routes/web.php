@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\SupportRequestController;
 use App\Http\Controllers\SupportSessionController;
 use App\Http\Controllers\UserProfileController;
@@ -15,6 +16,14 @@ Route::get('/', fn () => redirect()->route('login'));
 
 Route::get('/register', [RegisterController::class, 'show'])->name('register');
 Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
+
+Route::get('/verify/{user}', [VerificationController::class, 'show'])->middleware('signed')->name('verification.show');
+Route::post('/verify/{user}', [VerificationController::class, 'store'])->middleware('throttle:10,1')->name('verification.store');
+Route::post('/verify/{user}/resend', [VerificationController::class, 'resend'])->middleware('throttle:3,1')->name('verification.resend');
+
+Route::get('/login/2fa', [LoginController::class, 'showTwoFactor'])->name('login.2fa');
+Route::post('/login/2fa', [LoginController::class, 'verifyTwoFactor'])->middleware('throttle:10,1')->name('login.2fa.verify');
+Route::post('/login/2fa/resend', [LoginController::class, 'resendTwoFactor'])->middleware('throttle:3,1')->name('login.2fa.resend');
 
 Route::get('/login', [LoginController::class, 'show'])->name('login');
 Route::post('/login', [LoginController::class, 'store'])->name('login.store');
