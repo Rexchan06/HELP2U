@@ -12,6 +12,10 @@
 
     <div style="max-width: 768px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
 
+        @if ($supportRequest)
+            <x-request-stepper :current="3" />
+        @endif
+
         {{-- Header card --}}
         <div style="{{ $card }} display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 20px;">

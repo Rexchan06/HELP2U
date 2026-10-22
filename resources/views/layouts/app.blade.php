@@ -19,6 +19,8 @@
             ['label' => 'Sessions', 'route' => 'support-sessions.index', 'active' => 'support-sessions.*'],
         ];
 
+
+
         $initials = collect(explode(' ', auth()->user()->name ?? ''))
             ->filter()
             ->take(2)

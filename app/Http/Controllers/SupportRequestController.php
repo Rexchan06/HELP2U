@@ -21,7 +21,14 @@ class SupportRequestController extends Controller
             ->latest()
             ->paginate(10);
 
-        return view('support-requests.index', compact('supportRequests'));
+        // Volunteers also see the requests students sent to them, below their own.
+        $incomingMatches = $request->user()->volunteerProfile
+            ?->volunteerMatches()
+                ->with(['supportRequest.category', 'supportRequest.user'])
+                ->latest()
+                ->paginate(10, ['*'], 'incoming_page');
+
+        return view('support-requests.index', compact('supportRequests', 'incomingMatches'));
     }
 
     /**
