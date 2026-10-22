@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CodePurpose;
 use App\Models\User;
 use App\Services\VerificationService;
 use Illuminate\Http\Request;
@@ -16,11 +17,11 @@ class LoginController extends Controller
         return view('authorise.login');
     }
 
-    
+    /** Step 1: check the email and password, then email a 6-digit code. */
     public function store(Request $request, VerificationService $verification)
     {
-        $maxAttempts = 5;   
-        $lockSeconds = 20;   
+        $maxAttempts = 5;    // failed attempts allowed
+        $lockSeconds = 20;   // how long the lock lasts
 
         $credentials = $request->validate([
             'email'    => ['required', 'email'],
@@ -29,7 +30,7 @@ class LoginController extends Controller
 
         $credentials['email'] = strtolower($credentials['email']);
 
-       
+        // One counter per email address and device
         $key = Str::transliterate($credentials['email'] . '|' . $request->ip());
 
         if (RateLimiter::tooManyAttempts($key, $maxAttempts)) {
@@ -40,7 +41,7 @@ class LoginController extends Controller
             ]);
         }
 
-       
+        // Check the email and password without logging the student in yet
         if (! Auth::validate($credentials)) {
             RateLimiter::hit($key, $lockSeconds);
 
@@ -53,7 +54,7 @@ class LoginController extends Controller
 
         $user = User::where('email', $credentials['email'])->firstOrFail();
 
-        
+        // Account was never verified: send a new registration code and link
         if (! $user->email_verified_at) {
             $verification->sendRegistrationCode($user);
 
@@ -68,7 +69,7 @@ class LoginController extends Controller
             ->with('status', 'We sent a 6-digit code to ' . $user->email . '.');
     }
 
-    
+    /** Step 2: the page where the student types the emailed code. */
     public function showTwoFactor(Request $request)
     {
         if (! $request->session()->has('two_factor_user_id')) {
@@ -78,7 +79,7 @@ class LoginController extends Controller
         return view('authorise.two-factor');
     }
 
-    
+    /** Step 2: check the code and log the student in. */
     public function verifyTwoFactor(Request $request, VerificationService $verification)
     {
         $request->validate(['code' => ['required', 'digits:6']]);
@@ -89,7 +90,7 @@ class LoginController extends Controller
             return redirect()->route('login');
         }
 
-        if ($error = $verification->verify($user, 'login', $request->code)) {
+        if ($error = $verification->verify($user, CodePurpose::Login, $request->code)) {
             return back()->withErrors(['code' => $error]);
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Enums\CodePurpose;
 use App\Models\User;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -12,7 +13,7 @@ class VerificationCodeMail extends Mailable
     public function __construct(
         public User $user,
         public string $code,
-        public string $purpose,      // 'register' or 'login'
+        public CodePurpose $purpose,
         public ?string $link = null, // link to the verification page (registration only)
     ) {
     }
@@ -20,7 +21,7 @@ class VerificationCodeMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: $this->purpose === 'register'
+            subject: $this->purpose === CodePurpose::Register
                 ? 'Verify your HELP2U account'
                 : 'Your HELP2U login code',
         );

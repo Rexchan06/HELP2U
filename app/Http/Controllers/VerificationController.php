@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CodePurpose;
 use App\Models\User;
 use App\Services\VerificationService;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class VerificationController extends Controller
         $request->validate(['code' => ['required', 'digits:6']]);
 
         // Wrong or expired code: show the message and let the student ask for a new one.
-        if ($error = $verification->verify($user, 'register', $request->code)) {
+        if ($error = $verification->verify($user, CodePurpose::Register, $request->code)) {
             return back()->withErrors(['code' => $error]);
         }
 
