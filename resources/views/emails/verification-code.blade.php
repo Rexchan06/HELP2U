@@ -5,6 +5,8 @@
 
     @if ($purpose === \App\Enums\CodePurpose::Register)
         <p>Welcome to HELP2U. Your account is created once you verify your email. Open the link below and enter this code.</p>
+    @elseif ($purpose === \App\Enums\CodePurpose::Reset)
+        <p>We received a request to reset your HELP2U password. Enter this code to choose a new one.</p>
     @else
         <p>Use this code to finish logging in to HELP2U.</p>
     @endif
@@ -13,11 +15,6 @@
 
     <p>This code expires in {{ \App\Services\VerificationService::CODE_EXPIRY_MINUTES }} minutes.</p>
 
-    @if ($link)
-        <p><a href="{{ $link }}">Verify my account</a></p>
-        <p>The link expires in {{ \App\Services\VerificationService::LINK_EXPIRY_MINUTES }} minutes.</p>
-    @endif
-
-    <p>If you did not request this, you can ignore this email.</p>
+    <p>If you did not request this, you can ignore this email and your account stays unchanged.</p>
 </body>
 </html>

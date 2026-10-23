@@ -20,9 +20,11 @@ class VerificationCodeMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: $this->purpose === CodePurpose::Register
-                ? 'Verify your HELP2U account'
-                : 'Your HELP2U login code',
+            subject: match ($this->purpose) {
+                CodePurpose::Register => 'Verify your HELP2U account',
+                CodePurpose::Reset    => 'Reset your HELP2U password',
+                default               => 'Your HELP2U login code',
+            },
         );
     }
 

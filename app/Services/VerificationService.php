@@ -188,6 +188,14 @@ class VerificationService
         Mail::to($user->email)->send(new VerificationCodeMail($user->name, $code, CodePurpose::Login));
     }
 
+    /** Password reset email: a 6-digit code (saved in two_factor_codes with purpose RESET). */
+    public function sendResetCode(User $user): void
+    {
+        $code = $this->issueCode($user, CodePurpose::Reset);
+
+        Mail::to($user->email)->send(new VerificationCodeMail($user->name, $code, CodePurpose::Reset));
+    }
+
     // =====================================================================
     //  Helpers
     // =====================================================================

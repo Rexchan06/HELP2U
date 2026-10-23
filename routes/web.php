@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\SupportRequestController;
 use App\Http\Controllers\SupportSessionController;
@@ -28,6 +29,14 @@ Route::post('/login/2fa/resend', [LoginController::class, 'resendTwoFactor'])->m
 Route::get('/login', [LoginController::class, 'show'])->name('login');
 Route::post('/login', [LoginController::class, 'store'])->name('login.store');
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
+
+Route::get('/forgot-password', [PasswordResetController::class, 'showRequestForm'])->name('password.request');
+Route::post('/forgot-password', [PasswordResetController::class, 'sendCode'])->middleware('throttle:5,1')->name('password.email');
+Route::get('/forgot-password/code', [PasswordResetController::class, 'showCodeForm'])->name('password.code');
+Route::post('/forgot-password/code', [PasswordResetController::class, 'verifyCode'])->middleware('throttle:10,1')->name('password.code.verify');
+Route::post('/forgot-password/resend', [PasswordResetController::class, 'resendCode'])->middleware('throttle:3,1')->name('password.resend');
+Route::get('/reset-password', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
