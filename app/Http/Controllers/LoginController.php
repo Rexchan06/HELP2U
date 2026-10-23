@@ -52,15 +52,8 @@ class LoginController extends Controller
 
         RateLimiter::clear($key);
 
+        // Every account in the users table is already verified, so go straight to the code step.
         $user = User::where('email', $credentials['email'])->firstOrFail();
-
-        // Account was never verified: send a new registration code and link
-        if (! $user->email_verified_at) {
-            $verification->sendRegistrationCode($user);
-
-            return redirect($verification->verifyUrl($user))
-                ->with('status', 'Please verify your email first. We sent you a new code.');
-        }
 
         $verification->sendLoginCode($user);
         $request->session()->put('two_factor_user_id', $user->id);

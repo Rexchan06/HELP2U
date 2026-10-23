@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Services\VerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -36,17 +35,16 @@ class RegisterController extends Controller
             'email.unique'        => 'An account already exists for this email.',
         ]);
 
-        // The account stays unverified (email_verified_at is empty) until the code is entered.
-        $user = User::create([
-            'student_id' => $data['student_id'],
-            'name'       => $data['name'],
-            'email'      => $data['email'],
-            'password'   => Hash::make($data['password']),
+        // Nothing is saved in the users table yet. The details wait until the code is verified.
+        $token = $verification->startRegistration([
+            'student_id'    => $data['student_id'],
+            'name'          => $data['name'],
+            'email'         => $data['email'],
+            'password_hash' => Hash::make($data['password']),
         ]);
 
-        $verification->sendRegistrationCode($user);
-
-        return redirect($verification->verifyUrl($user))
-            ->with('status', 'Account created. We sent a 6-digit code to ' . $user->email . '.');
+        return redirect($verification->verifyUrl($token))
+            ->with('status', 'We sent a 6-digit code to ' . $data['email'] . '. Your account is created once you verify it.');
     }
 }
+

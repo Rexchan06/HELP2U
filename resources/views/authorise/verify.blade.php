@@ -16,11 +16,11 @@
 
         <h2 class="text-2xl font-bold tracking-tight">Verify your account</h2>
         <p class="mt-2 text-sm text-gray-500">
-            Enter the 6-digit code we sent to <strong class="text-gray-900">{{ $user->email }}</strong>.
-            It expires in 10 minutes.
+            Enter the 6-digit code we sent to <strong class="text-gray-900">{{ $email }}</strong>.
+            It expires in 10 minutes. Your account is created once you verify it.
         </p>
 
-        <form method="POST" action="{{ route('verification.store', $user) }}" class="mt-6 space-y-5">
+        <form method="POST" action="{{ route('verification.store', $token) }}" class="mt-6 space-y-5">
             @csrf
 
             <div>
@@ -36,7 +36,7 @@
             </button>
         </form>
 
-        <form method="POST" action="{{ route('verification.resend', $user) }}" class="mt-6 text-center">
+        <form method="POST" action="{{ route('verification.resend', $token) }}" class="mt-6 text-center">
             @csrf
             <button type="submit" class="text-sm font-medium text-gray-900 underline underline-offset-2">
                 Send a new code
@@ -44,7 +44,7 @@
         </form>
 
         <p class="mt-3 text-center text-sm text-gray-500">
-            <a href="{{ route('login') }}" class="font-medium text-gray-900 underline underline-offset-2">Back to log in</a>
+            <a href="{{ route('register') }}" class="font-medium text-gray-900 underline underline-offset-2">Back to registration</a>
         </p>
     </div>
 @endsection

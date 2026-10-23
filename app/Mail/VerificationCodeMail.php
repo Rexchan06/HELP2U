@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use App\Enums\CodePurpose;
-use App\Models\User;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -11,7 +10,7 @@ use Illuminate\Mail\Mailables\Envelope;
 class VerificationCodeMail extends Mailable
 {
     public function __construct(
-        public User $user,
+        public string $name,
         public string $code,
         public CodePurpose $purpose,
         public ?string $link = null, // link to the verification page (registration only)
