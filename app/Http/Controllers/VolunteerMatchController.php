@@ -9,6 +9,7 @@ use App\Models\VolunteerMatch;
 use App\Models\VolunteerProfile;
 use App\Notifications\MatchRequested;
 use App\Notifications\MatchResponded;
+use App\Services\MatchExpiryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -87,8 +88,10 @@ class VolunteerMatchController extends Controller
     /**
      * The volunteer's inbox: every request sent to them, newest first.
      */
-    public function index(Request $request): View|RedirectResponse
+    public function index(Request $request, MatchExpiryService $expiry): View|RedirectResponse
     {
+        $expiry->expireStale();
+
         $profile = $request->user()->volunteerProfile;
 
         if (! $profile) {
@@ -109,8 +112,11 @@ class VolunteerMatchController extends Controller
      * Full request detail for the volunteer. Opening it marks the related
      * notification as read.
      */
-    public function show(Request $request, VolunteerMatch $match): View
+    public function show(Request $request, VolunteerMatch $match, MatchExpiryService $expiry): View
     {
+        $expiry->expireStale();
+        $match->refresh();
+
         abort_unless($match->volunteerProfile->user_id === $request->user()->id, 403);
 
         $match->load(['supportRequest.category', 'supportRequest.user']);
