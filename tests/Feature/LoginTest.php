@@ -1,11 +1,18 @@
 <?php
 
-// Use Case 1 - Login (test sheet TC12 to TC15)
+// Use Case 1 - Login (test sheet TC12 to TC15 and TC29)
 
+use App\Enums\CodePurpose;
+use App\Mail\VerificationCodeMail;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->withoutVite();
+});
 
 /** A registered student whose password is Password123. */
 function loginTestStudent(array $overrides = []): User
@@ -18,18 +25,21 @@ function loginTestStudent(array $overrides = []): User
     ], $overrides));
 }
 
-it('TC12 - store() function logs the student in and redirects to the dashboard', function () {
-    $student = loginTestStudent();
+it('UC1-TC12 - store() function emails a login code after the correct email and password', function () {
+    Mail::fake();
+    loginTestStudent();
 
     $this->post(route('login.store'), [
         'email'    => 'yentze@helplive.edu.my',
         'password' => 'Password123',
-    ])->assertRedirect(route('dashboard'));
+    ])->assertRedirect(route('login.2fa'));
 
-    $this->assertAuthenticatedAs($student);
+    $this->assertGuest();
+    Mail::assertSent(VerificationCodeMail::class, fn ($mail) => $mail->purpose === CodePurpose::Login);
 });
 
-it('TC13 - store() function rejects a registered email with a wrong password', function () {
+it('UC1-TC13 - store() function rejects a registered email with a wrong password', function () {
+    Mail::fake();
     loginTestStudent(['email' => 'abc123@helplive.edu.my']);
 
     $this->post(route('login.store'), [
@@ -38,40 +48,56 @@ it('TC13 - store() function rejects a registered email with a wrong password', f
     ])->assertSessionHasErrors(['email' => 'The email or password is incorrect.']);
 
     $this->assertGuest();
+    Mail::assertNothingSent();
 });
 
-it('TC14 - store() function rejects an email that has no account', function () {
+it('UC1-TC14 - store() function rejects an email that has no account', function () {
+    Mail::fake();
+
     $this->post(route('login.store'), [
         'email'    => 'random@helplive.edu.my',
         'password' => 'Password123',
     ])->assertSessionHasErrors(['email' => 'The email or password is incorrect.']);
 
     $this->assertGuest();
+    Mail::assertNothingSent();
 });
 
-it('TC15 - store() function rejects the form when the email and password are empty', function () {
+it('UC1-TC15 - store() function rejects the form when the email and password are empty', function () {
     $this->post(route('login.store'), [])
         ->assertSessionHasErrors(['email', 'password']);
 
     $this->assertGuest();
 });
 
-it('TC29 - store() function locks the login after 5 failed attempts', function () {
+it('UC1-TC29 - store() function locks the login for 20 seconds after 5 wrong passwords', function () {
+    Mail::fake();
     loginTestStudent();
 
-    foreach (range(1, 5) as $attempt) {
-        $this->post(route('login.store'), [
-            'email'    => 'yentze@helplive.edu.my',
-            'password' => 'WrongPass999',
-        ]);
+    $wrong   = ['email' => 'yentze@helplive.edu.my', 'password' => 'WrongPass999'];
+    $correct = ['email' => 'yentze@helplive.edu.my', 'password' => 'Password123'];
+
+    // Wrong passwords 1 to 4 show the normal error
+    foreach (range(1, 4) as $attempt) {
+        $this->post(route('login.store'), $wrong)
+            ->assertSessionHasErrors(['email' => 'The email or password is incorrect.']);
     }
 
+    // The 5th wrong password starts the 20 second lock
+    $this->post(route('login.store'), $wrong)
+        ->assertSessionHasErrors(['email' => 'Too many login attempts. Please try again in 20 seconds.']);
 
-    $this->post(route('login.store'), [
-        'email'    => 'yentze@helplive.edu.my',
-        'password' => 'Password123',
-    ])->assertSessionHasErrors('email');
+    // While locked, even the correct password is refused and no code is sent
+    $this->post(route('login.store'), $correct)->assertSessionHasErrors('email');
 
     expect(session('errors')->first('email'))->toContain('Too many login attempts');
     $this->assertGuest();
+    Mail::assertNothingSent();
+
+    // After the lock ends, the correct password works again
+    $this->travel(21)->seconds();
+
+    $this->post(route('login.store'), $correct)->assertRedirect(route('login.2fa'));
+
+    Mail::assertSent(VerificationCodeMail::class, fn ($mail) => $mail->purpose === CodePurpose::Login);
 });

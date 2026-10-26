@@ -15,9 +15,9 @@ use Illuminate\Support\Str;
 
 class VerificationService
 {
-    public const CODE_EXPIRY_MINUTES = 10;   // how long a code works
-    public const LINK_EXPIRY_MINUTES = 60;   // how long a pending registration (and its link) is kept
-    public const MAX_WRONG_CODES     = 5;    // wrong tries allowed for one code
+    public const CODE_EXPIRY_MINUTES = 10;   
+    public const LINK_EXPIRY_MINUTES = 60;   
+    public const MAX_WRONG_CODES     = 5;    
 
     // =====================================================================
     //  REGISTRATION: nothing is saved in the users table until the code is verified.
@@ -196,9 +196,6 @@ class VerificationService
         Mail::to($user->email)->send(new VerificationCodeMail($user->name, $code, CodePurpose::Reset));
     }
 
-    // =====================================================================
-    //  Helpers
-    // =====================================================================
 
     private function newCode(): string
     {
