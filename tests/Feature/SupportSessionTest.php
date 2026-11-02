@@ -9,6 +9,9 @@ use App\Models\User;
 use App\Models\VolunteerMatch;
 use App\Models\VolunteerProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Enums\SessionStatus;
+use App\Notifications\SessionCancelled;
+use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
 
@@ -465,4 +468,98 @@ it('TC33 - store() function rejects an empty location for a face-to-face session
     ])->assertSessionHasErrors(['location' => 'The location field is required.']);
  
     expect(SupportSession::count())->toBe(0);
+});
+
+// cancel() Test
+
+it('TC34 - cancel() function lets the student cancel and notifies the volunteer', function () {
+    Notification::fake();
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp));
+
+    $this->actingAs($student)->patch(route('support-sessions.cancel', $session))
+        ->assertRedirect(route('support-sessions.show', $session))
+        ->assertSessionHas('success', 'Session cancelled. The other participant has been notified.');
+
+    $session->refresh();
+    expect($session->status)->toBe(SessionStatus::Cancelled)
+        ->and($session->cancelled_by)->toBe($student->id)
+        ->and($session->cancelled_at)->not->toBeNull();
+    Notification::assertSentTo($volUser, SessionCancelled::class);
+    Notification::assertNotSentTo($student, SessionCancelled::class);
+});
+
+it('TC35 - cancel() function lets the volunteer cancel and notifies the student', function () {
+    Notification::fake();
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp));
+
+    $this->actingAs($volUser)->patch(route('support-sessions.cancel', $session))
+        ->assertSessionHas('success');
+
+    expect($session->fresh()->cancelled_by)->toBe($volUser->id);
+    Notification::assertSentTo($student, SessionCancelled::class);
+    Notification::assertNotSentTo($volUser, SessionCancelled::class);
+});
+
+it('TC36 - cancel() function returns 403 (Forbidden) for a user who is not in the session', function () {
+    Notification::fake();
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp));
+
+    $this->actingAs(makeUser())->patch(route('support-sessions.cancel', $session))
+        ->assertForbidden();
+
+    expect($session->fresh()->status)->toBe(SessionStatus::Scheduled);
+    Notification::assertNothingSent();
+});
+
+it('TC37 - cancel() function blocks cancelling a session that is already cancelled', function () {
+    Notification::fake();
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp));
+    $session->update(['status' => SessionStatus::Cancelled]);
+
+    $this->actingAs($student)->patch(route('support-sessions.cancel', $session))
+        ->assertSessionHas('failed', 'Only scheduled sessions can be cancelled.');
+
+    Notification::assertNothingSent();
+});
+
+it('TC38 - cancel() function blocks cancelling a completed session', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp));
+    $session->update(['status' => SessionStatus::Completed]);
+
+    $this->actingAs($student)->patch(route('support-sessions.cancel', $session))
+        ->assertSessionHas('failed', 'Only scheduled sessions can be cancelled.');
+
+    expect($session->fresh()->status)->toBe(SessionStatus::Completed);
+});
+
+it('TC39 - cancel() function blocks cancelling a session that has already started', function () {
+    Notification::fake();
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subMinutes(10));
+
+    $this->actingAs($student)->patch(route('support-sessions.cancel', $session))
+        ->assertSessionHas('failed', 'This session has already started and can no longer be cancelled.');
+
+    expect($session->fresh()->status)->toBe(SessionStatus::Scheduled);
+    Notification::assertNothingSent();
+});
+
+it('TC40 - cancel() function redirects a guest (not logged in) to the login page', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp));
+
+    $this->patch(route('support-sessions.cancel', $session))
+        ->assertRedirect(route('login'));
 });
