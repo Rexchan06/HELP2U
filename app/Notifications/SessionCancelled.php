@@ -8,7 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
 /**
- * In-app notification sent to the other participant when a session is cancelled.
+ * Sent to the other participant when a session is cancelled.
  */
 class SessionCancelled extends Notification
 {

@@ -112,6 +112,13 @@
                         </button>
                     @endif
 
+                    @if ($isStudent && $start->isFuture())
+                        <a href="{{ route('support-sessions.reschedule', $supportSession) }}"
+                           class="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-sm font-semibold text-gray-700 transition hover:border-gray-900 hover:text-gray-900">
+                            Reschedule
+                        </a>
+                    @endif
+
                     @if (Route::has('support-sessions.cancel'))
                         <form method="POST" action="{{ route('support-sessions.cancel', $supportSession) }}">
                             @csrf
