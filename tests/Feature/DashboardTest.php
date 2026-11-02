@@ -12,7 +12,7 @@ beforeEach(function () {
     $this->withoutVite();
 });
 
-it("TC16 - index() function shows the logged-in student's details on the dashboard", function () {
+it("UC1-TC16 - index() function shows the logged-in student's details on the dashboard", function () {
     $student = User::factory()->create([
         'student_id' => 'B2501146',
         'name'       => 'Tan Yen Tze',
