@@ -43,4 +43,6 @@ Route::middleware('auth')->group(function () {
         ->name('support-sessions.index');
     Route::get('/support-sessions/{supportSession}', [SupportSessionController::class, 'show'])
         ->name('support-sessions.show');
+    Route::patch('/support-sessions/{supportSession}/cancel', [SupportSessionController::class, 'cancel'])
+        ->name('support-sessions.cancel');
 });

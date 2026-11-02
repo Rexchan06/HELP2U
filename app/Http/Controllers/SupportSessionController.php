@@ -12,6 +12,7 @@ use App\Enums\SupportMode;
 use Illuminate\Validation\Rule;
 use App\Enums\SessionStatus;
 use Illuminate\Support\Carbon;
+use App\Notifications\SessionCancelled;
 
 class SupportSessionController extends Controller
 {
@@ -133,5 +134,41 @@ class SupportSessionController extends Controller
         }
 
         return view('support-sessions.show', compact('supportSession'));
+    }
+
+    public function cancel(SupportSession $supportSession)
+    {
+        $userId = auth()->id();
+        $student = $supportSession->volunteerMatch->supportRequest->user;
+        $volunteer = $supportSession->volunteerMatch->volunteerProfile->user;
+
+        // Only the two participants can cancel
+        if ($userId != $student->id && $userId != $volunteer->id) {
+            abort(403);
+        }
+
+        // Only "Scheduled" sessions can be cancelled
+        if ($supportSession->status !== SessionStatus::Scheduled) {
+            return back()->with('failed', 'Only scheduled sessions can be cancelled.');
+        }
+
+        // Must be before the session starts
+        if ($supportSession->scheduled_start->isPast()) {
+            return back()->with('failed', 'This session has already started and can no longer be cancelled.');
+        }
+
+        $supportSession->update([
+            'status' => SessionStatus::Cancelled,
+            'cancelled_at' => now(),
+            'cancelled_by' => $userId,
+        ]);
+
+        // Notify whoever did NOT cancel
+        $otherParty = $userId == $student->id ? $volunteer : $student;
+        $otherParty->notify(new SessionCancelled($supportSession, auth()->user()));
+
+        return redirect()
+            ->route('support-sessions.show', $supportSession)
+            ->with('success', 'Session cancelled. The other participant has been notified.');
     }
 }
