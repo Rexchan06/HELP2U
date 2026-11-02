@@ -1,0 +1,61 @@
+# HELP2U - Continuous Integration pipeline
+# Runs the full Pest test suite automatically on every push and every pull request.
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]          # any branch (master + each member's branch)
+  pull_request:
+    branches: [master]        # PRs that want to merge into master
+
+# If someone pushes again quickly, cancel the older run on that branch
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Download the repo's code onto GitHub's virtual machine
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Install PHP 8.4 (our composer.lock needs >= 8.4) with SQLite for tests
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, pdo_sqlite, sqlite3, bcmath
+          coverage: none
+
+      # 3. Install Node for the Vite/Tailwind frontend build
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      # 4. Install PHP dependencies (same versions as composer.lock)
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      # 5. Install JS dependencies and build assets
+      #    (public/build is gitignored, but our Blade views use @vite, so tests need it)
+      - name: Install npm dependencies & build assets
+        run: |
+          npm ci
+          npm run build
+
+      # 6. Create the .env file the app needs to boot
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # 7. Run every Unit + Feature test (uses in-memory SQLite from phpunit.xml)
+      - name: Run tests
+        run: php artisan test
