@@ -13,6 +13,7 @@ use Illuminate\Validation\Rule;
 use App\Enums\SessionStatus;
 use Illuminate\Support\Carbon;
 use App\Notifications\SessionCancelled;
+use App\Models\VolunteerMatch;
 
 class SupportSessionController extends Controller
 {
@@ -69,19 +70,9 @@ class SupportSessionController extends Controller
         ]);
 
         $start = Carbon::parse($validated['scheduled_start']);
-        $end = $start->copy()->addHour();
 
-        $fitsAvailability = $match->volunteerProfile->availabilities
-            ->where('day_of_week', $start->dayOfWeek)
-            ->contains(fn ($availability) =>
-                $start->gte($start->copy()->setTimeFromTimeString($availability->start_time))
-                && $end->lte($start->copy()->setTimeFromTimeString($availability->end_time))
-            );
-
-        if (! $fitsAvailability) {
-            return back()
-                ->withErrors(['scheduled_start' => 'Please choose a time within the volunteer\'s availability.'])
-                ->withInput();
+        if ($error = $this->slotError($match, $start)) {
+            return back()->withErrors(['scheduled_start' => $error])->withInput();
         }
 
         $alreadyBooked = SupportSession::query()
@@ -170,5 +161,30 @@ class SupportSessionController extends Controller
         return redirect()
             ->route('support-sessions.show', $supportSession)
             ->with('success', 'Session cancelled. The other participant has been notified.');
+    }
+
+    private function slotError(VolunteerMatch $match, Carbon $start, ?int $ignoreSessionId = null): ?string
+    {
+        $end = $start->copy()->addHour();
+
+        $fitsAvailability = $match->volunteerProfile->availabilities
+            ->where('day_of_week', $start->dayOfWeek)
+            ->contains(fn ($availability) =>
+                $start->gte($start->copy()->setTimeFromTimeString($availability->start_time))
+                && $end->lte($start->copy()->setTimeFromTimeString($availability->end_time))
+            );
+
+        if (! $fitsAvailability) {
+            return 'Please choose a time within the volunteer\'s availability.';
+        }
+
+        $alreadyBooked = SupportSession::query()
+            ->where('scheduled_start', $start)
+            ->where('status', SessionStatus::Scheduled)
+            ->when($ignoreSessionId, fn ($q) => $q->whereKeyNot($ignoreSessionId))
+            ->whereHas('volunteerMatch', fn ($q) => $q->where('volunteer_profile_id', $match->volunteer_profile_id))
+            ->exists();
+
+        return $alreadyBooked ? 'That time slot has just been booked. Please pick another.' : null;
     }
 }
