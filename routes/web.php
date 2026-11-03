@@ -49,4 +49,6 @@ Route::middleware('auth')->group(function () {
         ->name('support-sessions.reschedule');
     Route::patch('/support-sessions/{supportSession}/reschedule', [SupportSessionController::class, 'reschedule'])
         ->name('support-sessions.reschedule.update');
+    Route::patch('/support-sessions/{supportSession}/complete', [SupportSessionController::class, 'complete'])
+        ->name('support-sessions.complete');
 });

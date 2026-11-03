@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
 use App\Notifications\SessionCancelled;
 use App\Models\VolunteerMatch;
 use App\Notifications\SessionRescheduled;
+use App\Notifications\SessionCompleted;
 
 class SupportSessionController extends Controller
 {
@@ -220,6 +221,33 @@ class SupportSessionController extends Controller
         return redirect()
             ->route('support-sessions.show', $supportSession)
             ->with('success', 'Session rescheduled. The volunteer has been notified.');
+    }
+
+    public function complete(SupportSession $supportSession)
+    {
+        if (auth()->id() != $supportSession->volunteerMatch->volunteerProfile->user_id) {
+            abort(403);
+        }
+
+        if ($supportSession->status !== SessionStatus::Scheduled) {
+            return back()->with('failed', 'Only scheduled sessions can be marked as completed.');
+        }
+
+        if ($supportSession->scheduled_start->isFuture()) {
+            return back()->with('failed', 'This session has not started yet.');
+        }
+
+        $supportSession->update([
+            'status' => SessionStatus::Completed,
+            'completed_at' => now(),
+        ]);
+
+        $supportSession->volunteerMatch->supportRequest->user
+            ->notify(new SessionCompleted($supportSession));
+
+        return redirect()
+            ->route('support-sessions.show', $supportSession)
+            ->with('success', 'Session marked as completed. The student can now leave feedback.');
     }
 
     private function slotError(VolunteerMatch $match, Carbon $start, ?int $ignoreSessionId = null): ?string

@@ -95,21 +95,23 @@
                 </p>
             @endif
 
-            {{-- Complete / cancel become live once their routes are added (iteration 2) --}}
             @if ($isScheduled)
                 <div class="mt-8 space-y-2">
-                    @if (Route::has('support-sessions.complete'))
-                        <form method="POST" action="{{ route('support-sessions.complete', $supportSession) }}">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-700">
+                    @if (! $isStudent)
+                        @if ($start->isPast())
+                            <form method="POST" action="{{ route('support-sessions.complete', $supportSession) }}">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-700">
+                                    Mark as Completed
+                                </button>
+                            </form>
+                        @else
+                            <button type="button" disabled title="Available once the session has started"
+                                    class="w-full cursor-not-allowed rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white opacity-40">
                                 Mark as Completed
                             </button>
-                        </form>
-                    @else
-                        <button type="button" disabled class="w-full cursor-not-allowed rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white opacity-40">
-                            Mark as Completed
-                        </button>
+                        @endif
                     @endif
 
                     @if ($isStudent && $start->isFuture())
@@ -119,7 +121,7 @@
                         </a>
                     @endif
 
-                    @if (Route::has('support-sessions.cancel'))
+                    @if ($start->isFuture())
                         <form method="POST" action="{{ route('support-sessions.cancel', $supportSession) }}">
                             @csrf
                             @method('PATCH')
@@ -127,10 +129,6 @@
                                 Cancel Session
                             </button>
                         </form>
-                    @else
-                        <button type="button" disabled class="w-full cursor-not-allowed rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 opacity-40">
-                            Cancel Session
-                        </button>
                     @endif
                 </div>
             @endif
