@@ -13,6 +13,7 @@ use App\Enums\SessionStatus;
 use App\Notifications\SessionCancelled;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\SessionRescheduled;
+use App\Notifications\SessionCompleted;
 
 uses(RefreshDatabase::class);
 
@@ -696,4 +697,92 @@ it('TC51 - reschedule() function redirects a guest (not logged in) to the login 
     $this->patch(route('support-sessions.reschedule.update', $session), [
         'scheduled_start' => at('14:00'),
     ])->assertRedirect(route('login'));
+});
+
+// complete() Test
+
+it('TC52 - complete() function lets the volunteer complete a session that has started and notifies the student', function () {
+    Notification::fake();
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subHour());
+
+    $this->actingAs($volUser)->patch(route('support-sessions.complete', $session))
+        ->assertRedirect(route('support-sessions.show', $session))
+        ->assertSessionHas('success', 'Session marked as completed. The student can now leave feedback.');
+
+    $session->refresh();
+    expect($session->status)->toBe(SessionStatus::Completed)
+        ->and($session->completed_at)->not->toBeNull();
+    Notification::assertSentTo($student, SessionCompleted::class);
+    Notification::assertNotSentTo($volUser, SessionCompleted::class);
+});
+
+it('TC53 - complete() function returns 403 (Forbidden) for the student', function () {
+    Notification::fake();
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subHour());
+
+    $this->actingAs($student)->patch(route('support-sessions.complete', $session))
+        ->assertForbidden();
+
+    expect($session->fresh()->status)->toBe(SessionStatus::Scheduled);
+    Notification::assertNothingSent();
+});
+
+it('TC54 - complete() function returns 403 (Forbidden) for a user who is not in the session', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subHour());
+
+    $this->actingAs(makeUser())->patch(route('support-sessions.complete', $session))
+        ->assertForbidden();
+});
+
+it('TC55 - complete() function blocks completing a session that has not started yet', function () {
+    Notification::fake();
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), at('10:00'));
+
+    $this->actingAs($volUser)->patch(route('support-sessions.complete', $session))
+        ->assertSessionHas('failed', 'This session has not started yet.');
+
+    expect($session->fresh()->status)->toBe(SessionStatus::Scheduled);
+    Notification::assertNothingSent();
+});
+
+it('TC56 - complete() function blocks completing a cancelled session', function () {
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subHour());
+    $session->update(['status' => SessionStatus::Cancelled]);
+
+    $this->actingAs($volUser)->patch(route('support-sessions.complete', $session))
+        ->assertSessionHas('failed', 'Only scheduled sessions can be marked as completed.');
+
+    expect($session->fresh()->status)->toBe(SessionStatus::Cancelled);
+});
+
+it('TC57 - complete() function blocks completing a session that is already completed', function () {
+    Notification::fake();
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subHour());
+    $session->update(['status' => SessionStatus::Completed]);
+
+    $this->actingAs($volUser)->patch(route('support-sessions.complete', $session))
+        ->assertSessionHas('failed', 'Only scheduled sessions can be marked as completed.');
+
+    Notification::assertNothingSent();
+});
+
+it('TC58 - complete() function redirects a guest (not logged in) to the login page', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subHour());
+
+    $this->patch(route('support-sessions.complete', $session))
+        ->assertRedirect(route('login'));
 });
