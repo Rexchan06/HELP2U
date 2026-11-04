@@ -33,7 +33,7 @@ function incomingRequest(VolunteerProfile $volunteer, ?User $student = null): Vo
     ]);
 }
 
-it('lists only the requests addressed to the logged-in volunteer', function () {
+it('TC16 - index() lists only the requests addressed to the logged-in volunteer', function () {
     $mine = VolunteerProfile::factory()->create();
     $other = VolunteerProfile::factory()->create();
     incomingRequest($mine, User::factory()->create(['name' => 'AAA Student One']));
@@ -46,17 +46,17 @@ it('lists only the requests addressed to the logged-in volunteer', function () {
         ->assertDontSee('ZZZ Student Two');
 });
 
-it('sends users without a volunteer profile to the profile setup', function () {
+it('TC17 - index() sends users without a volunteer profile to the profile setup', function () {
     $this->actingAs(User::factory()->create())
         ->get(route('volunteer-matches.index'))
         ->assertRedirect(route('volunteer.profile'));
 });
 
-it('redirects guests from the inbox to login', function () {
+it('TC18 - index() redirects guests from the inbox to login', function () {
     $this->get(route('volunteer-matches.index'))->assertRedirect(route('login'));
 });
 
-it('shows the full request detail and marks the notification as read', function () {
+it('TC19 - show() displays the full request detail and marks the notification as read', function () {
     $volunteer = VolunteerProfile::factory()->create();
     $match = incomingRequest($volunteer);
 
@@ -74,7 +74,7 @@ it('shows the full request detail and marks the notification as read', function 
     expect($volunteer->user->unreadNotifications()->count())->toBe(0);
 });
 
-it('forbids viewing a match addressed to another volunteer', function () {
+it('TC24 - show() forbids viewing a match addressed to another volunteer', function () {
     $match = incomingRequest(VolunteerProfile::factory()->create());
 
     $this->actingAs(User::factory()->create())
@@ -82,7 +82,7 @@ it('forbids viewing a match addressed to another volunteer', function () {
         ->assertForbidden();
 });
 
-it('accepts a pending request and informs the student', function () {
+it('TC20 - respond() function accepts a pending request and informs the student', function () {
     Notification::fake();
 
     $volunteer = VolunteerProfile::factory()->create();
@@ -100,7 +100,7 @@ it('accepts a pending request and informs the student', function () {
     Notification::assertSentTo($student, MatchResponded::class);
 });
 
-it('rejects a pending request and re-opens it for other volunteers', function () {
+it('TC21 - respond() rejects a pending request and re-opens it for other volunteers', function () {
     Notification::fake();
 
     $volunteer = VolunteerProfile::factory()->create();
@@ -117,7 +117,7 @@ it('rejects a pending request and re-opens it for other volunteers', function ()
     Notification::assertSentTo($student, MatchResponded::class);
 });
 
-it('blocks responding to an already answered request', function () {
+it('TC22 - respond() blocks responding to an already answered request', function () {
     $volunteer = VolunteerProfile::factory()->create();
     $match = incomingRequest($volunteer);
     $match->update(['status' => MatchStatus::Rejected, 'responded_at' => now()]);
@@ -129,7 +129,7 @@ it('blocks responding to an already answered request', function () {
     expect($match->refresh()->status)->toBe(MatchStatus::Rejected);
 });
 
-it('blocks responding to an expired request', function () {
+it('TC23 - respond() blocks responding to an expired request', function () {
     $volunteer = VolunteerProfile::factory()->create();
     $match = incomingRequest($volunteer);
     $match->update(['expires_at' => now()->subHour()]);
@@ -141,7 +141,7 @@ it('blocks responding to an expired request', function () {
     expect($match->refresh()->status)->toBe(MatchStatus::Pending);
 });
 
-it('forbids responding to a match addressed to another volunteer', function () {
+it('TC25 - respond() forbids responding to a match addressed to another volunteer', function () {
     $match = incomingRequest(VolunteerProfile::factory()->create());
 
     $this->actingAs(User::factory()->create())
@@ -149,7 +149,7 @@ it('forbids responding to a match addressed to another volunteer', function () {
         ->assertForbidden();
 });
 
-it('rejects an unknown decision value', function () {
+it('TC26 - respond() rejects an unknown decision value', function () {
     $volunteer = VolunteerProfile::factory()->create();
     $match = incomingRequest($volunteer);
 

@@ -34,7 +34,7 @@ function staleMatch(MatchStatus $status = MatchStatus::Pending, bool $stale = tr
     ]);
 }
 
-it('expires a pending match past its window and re-opens the request', function () {
+it('TC27 - expireStale() expires a pending match past its window, re-opens the request and notifies the student', function () {
     Notification::fake();
 
     $match = staleMatch();
@@ -48,7 +48,7 @@ it('expires a pending match past its window and re-opens the request', function 
     Notification::assertSentTo($match->supportRequest->user, MatchExpired::class);
 });
 
-it('leaves matches still inside their window alone', function () {
+it('TC28 - expireStale() leaves matches still inside their window alone', function () {
     Notification::fake();
 
     $match = staleMatch(stale: false);
@@ -62,14 +62,14 @@ it('leaves matches still inside their window alone', function () {
     Notification::assertNothingSent();
 });
 
-it('leaves already answered matches alone', function () {
+it('TC29 - expireStale() leaves already answered matches alone', function () {
     $match = staleMatch(MatchStatus::Rejected);
 
     expect(app(MatchExpiryService::class)->expireStale())->toBe(0)
         ->and($match->refresh()->status)->toBe(MatchStatus::Rejected);
 });
 
-it('runs through the matches:expire artisan command', function () {
+it('TC30 - the matches:expire artisan command expires stale matches', function () {
     $match = staleMatch();
 
     $this->artisan('matches:expire')->assertSuccessful();
@@ -77,7 +77,7 @@ it('runs through the matches:expire artisan command', function () {
     expect($match->refresh()->status)->toBe(MatchStatus::Expired);
 });
 
-it('expires stale matches lazily when the student opens the requests page', function () {
+it('TC31 - lazy expiry runs when the student opens the requests page', function () {
     $match = staleMatch();
 
     $this->actingAs($match->supportRequest->user)
@@ -87,7 +87,7 @@ it('expires stale matches lazily when the student opens the requests page', func
     expect($match->refresh()->status)->toBe(MatchStatus::Expired);
 });
 
-it('lets the student pick another volunteer after expiry', function () {
+it('TC32 - the student can pick another volunteer after expiry', function () {
     Notification::fake();
 
     $match = staleMatch();

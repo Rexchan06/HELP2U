@@ -55,11 +55,19 @@
                     New Request
                 </a>
 
-                <button type="button" class="rounded-full p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900" aria-label="Notifications">
+                @php $unreadCount = auth()->user()->unreadNotifications()->count(); @endphp
+                <a href="{{ route('notifications.index') }}"
+                   class="relative rounded-full p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+                   aria-label="Notifications">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
                     </svg>
-                </button>
+                    @if ($unreadCount > 0)
+                        <span class="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                            {{ $unreadCount }}
+                        </span>
+                    @endif
+                </a>
 
                 @if (auth()->user()?->volunteerProfile)
                     <span class="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-800">Volunteer</span>
@@ -82,6 +90,52 @@
             </div>
         </div>
     </header>
+
+    @if (session('show_unread_popup') && $unreadCount > 0)
+        @php $latest = auth()->user()->notifications()->latest()->limit(4)->get(); @endphp
+        <a href="{{ route('notifications.index') }}" id="notification-popup"
+           class="fixed right-4 top-20 z-50 block w-80 rounded-xl border border-gray-200 bg-white shadow-xl transition duration-300">
+            <div class="px-5 pb-3 pt-4 text-base font-bold">Notifications</div>
+
+            @foreach ($latest as $notification)
+                @php
+                    $decision = $notification->data['decision'] ?? null;
+                    $badge = match (true) {
+                        $decision === 'accepted' => 'bg-green-100 text-green-700',
+                        $decision === 'rejected' => 'bg-amber-100 text-amber-700',
+                        $decision === 'expired'  => 'bg-red-100 text-red-700',
+                        default                  => 'bg-blue-100 text-blue-700',
+                    };
+                @endphp
+                <div class="flex items-start gap-3 border-t border-gray-100 px-5 py-3">
+                    <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg {{ $badge }}">
+                        @if ($decision === 'accepted')
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        @elseif ($decision === 'rejected' || $decision === 'expired')
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        @else
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3A6 6 0 006 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                        @endif
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block truncate text-sm {{ $notification->unread() ? 'font-semibold text-gray-900' : 'text-gray-500' }}">
+                            {{ $notification->data['message'] ?? '' }}
+                        </span>
+                        <span class="mt-0.5 block text-xs text-gray-400">{{ $notification->created_at->diffForHumans() }}</span>
+                    </span>
+                </div>
+            @endforeach
+        </a>
+
+        <script>
+            setTimeout(function () {
+                var popup = document.getElementById('notification-popup');
+                if (! popup) return;
+                popup.classList.add('opacity-0');
+                setTimeout(function () { popup.remove(); }, 300);
+            }, 10000);
+        </script>
+    @endif
 
     <main class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         @if (session('success'))

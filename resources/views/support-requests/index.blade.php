@@ -8,7 +8,7 @@
             <h1 class="text-xl font-bold">My Support Requests</h1>
             <a
                 href="{{ route('support-requests.create') }}"
-                class="rounded-md bg-[#4a8ac4] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#3d7ab3]"
+                class="rounded-md bg-[#17324D] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#122a3f]"
             >
                 New Request
             </a>

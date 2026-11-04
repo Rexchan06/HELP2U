@@ -24,7 +24,7 @@ function newSupportRequest(User $student): SupportRequest
     ]);
 }
 
-it('sends the request to the chosen volunteer and notifies them', function () {
+it('TC1-TC4 - store() saves a pending match, updates the request to Pending, notifies the volunteer and redirects', function () {
     Notification::fake();
 
     $student = User::factory()->create();
@@ -45,7 +45,7 @@ it('sends the request to the chosen volunteer and notifies them', function () {
     Notification::assertSentTo($volunteer->user, MatchRequested::class);
 });
 
-it('blocks sending while another match is still active', function () {
+it('TC10 - store() blocks sending while another match is still active', function () {
     $student = User::factory()->create();
     $supportRequest = newSupportRequest($student);
     $first = VolunteerProfile::factory()->create();
@@ -64,7 +64,7 @@ it('blocks sending while another match is still active', function () {
     expect($supportRequest->volunteerMatches()->count())->toBe(1);
 });
 
-it('allows re-sending after a rejection', function () {
+it('TC5 - store() allows re-sending after a rejection', function () {
     $student = User::factory()->create();
     $supportRequest = newSupportRequest($student);
     $volunteer = VolunteerProfile::factory()->create();
@@ -86,7 +86,7 @@ it('allows re-sending after a rejection', function () {
         ->and($match->responded_at)->toBeNull();
 });
 
-it('forbids sending a request that belongs to another student', function () {
+it('TC7 - store() forbids sending a request that belongs to another student', function () {
     $supportRequest = newSupportRequest(User::factory()->create());
     $volunteer = VolunteerProfile::factory()->create();
 
@@ -95,7 +95,7 @@ it('forbids sending a request that belongs to another student', function () {
         ->assertForbidden();
 });
 
-it('returns 404 when sending to an inactive volunteer', function () {
+it('TC8 - store() returns 404 when sending to an inactive volunteer', function () {
     $student = User::factory()->create();
     $supportRequest = newSupportRequest($student);
     $volunteer = VolunteerProfile::factory()->create(['is_active' => false]);
@@ -105,7 +105,7 @@ it('returns 404 when sending to an inactive volunteer', function () {
         ->assertNotFound();
 });
 
-it('shows the send request form on the profile page in request context', function () {
+it('TC14 - volunteer profile shows the send request form in request context', function () {
     $student = User::factory()->create();
     $supportRequest = newSupportRequest($student);
     $volunteer = VolunteerProfile::factory()->create();
@@ -116,7 +116,7 @@ it('shows the send request form on the profile page in request context', functio
         ->assertSee('Send Request');
 });
 
-it('shows a request sent state once the volunteer was chosen', function () {
+it('TC15 - volunteer profile shows a request sent state once the volunteer was chosen', function () {
     $student = User::factory()->create();
     $supportRequest = newSupportRequest($student);
     $volunteer = VolunteerProfile::factory()->create();
@@ -133,7 +133,7 @@ it('shows a request sent state once the volunteer was chosen', function () {
         ->assertSee('Request Sent');
 });
 
-it('redirects guests to the login page', function () {
+it('TC6 - store() redirects guests to the login page', function () {
     $supportRequest = newSupportRequest(User::factory()->create());
     $volunteer = VolunteerProfile::factory()->create();
 
@@ -143,7 +143,7 @@ it('redirects guests to the login page', function () {
     expect($supportRequest->volunteerMatches()->count())->toBe(0);
 });
 
-it('blocks students from sending a request to themselves', function () {
+it('TC9 - store() blocks students from sending a request to themselves', function () {
     $student = User::factory()->create();
     $supportRequest = newSupportRequest($student);
     $volunteer = VolunteerProfile::factory()->create(['user_id' => $student->id]);
@@ -155,7 +155,7 @@ it('blocks students from sending a request to themselves', function () {
     expect($supportRequest->volunteerMatches()->count())->toBe(0);
 });
 
-it('requires a support request to be chosen', function () {
+it('TC11 - store() requires a support request to be chosen', function () {
     $student = User::factory()->create();
     $volunteer = VolunteerProfile::factory()->create();
 
@@ -166,7 +166,7 @@ it('requires a support request to be chosen', function () {
     expect($volunteer->volunteerMatches()->count())->toBe(0);
 });
 
-it('rejects a support request id that does not exist', function () {
+it('TC12 - store() rejects a support request id that does not exist', function () {
     $student = User::factory()->create();
     $volunteer = VolunteerProfile::factory()->create();
 
@@ -177,7 +177,7 @@ it('rejects a support request id that does not exist', function () {
     expect($volunteer->volunteerMatches()->count())->toBe(0);
 });
 
-it('rolls back the match and request updates when a database error occurs', function () {
+it('TC13 - store() rolls back the match and request updates when a database error occurs', function () {
     $student = User::factory()->create();
     $supportRequest = newSupportRequest($student);
     $volunteer = VolunteerProfile::factory()->create();
