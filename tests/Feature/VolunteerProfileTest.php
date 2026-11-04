@@ -46,6 +46,7 @@ function volunteerPayload(array $categoryIds, array $overrides = []): array
         'skills'        => 'Python, Exam Prep, Resume Review',
         'support_modes' => [SupportMode::F2F->value, SupportMode::Virtual->value],
         'meeting_link'  => 'https://zoom.us/j/123456789',
+        'location'      => 'Student Lounge, Table 4',
         'availability'  => [
             ['day' => '1', 'start' => '09:00', 'end' => '11:00'],
             ['day' => '3', 'start' => '14:00', 'end' => '16:00'],

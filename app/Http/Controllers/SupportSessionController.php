@@ -87,7 +87,7 @@ class SupportSessionController extends Controller
             ->where('scheduled_start', $start)
             ->where('status', SessionStatus::Scheduled)
             ->whereHas('volunteerMatch', fn ($q) => $q->where('volunteer_profile_id',
-$match->volunteer_profile_id))
+            $match->volunteer_profile_id))
             ->exists();
 
         if ($alreadyBooked) {

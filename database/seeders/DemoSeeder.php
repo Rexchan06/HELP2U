@@ -125,6 +125,7 @@ class DemoSeeder extends Seeder
             'supports_f2f' => $f2f,
             'supports_virtual' => $virtual,
             'meeting_link' => $virtual ? 'https://teams.microsoft.com/l/meetup-join/help2u-demo' : null,
+            'location' => $f2f ? 'HELP University Library, Level 2' : null,
             'is_active' => true,
         ]);
 
