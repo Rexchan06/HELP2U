@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSupportRequestRequest;
 use App\Models\Category;
+use App\Services\MatchExpiryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,15 +14,25 @@ class SupportRequestController extends Controller
     /**
      * Display the student's support requests (history).
      */
-    public function index(Request $request): View
+    public function index(Request $request, MatchExpiryService $expiry): View
     {
+        // Lazy expiry: keeps the page truthful even without a cron worker.
+        $expiry->expireStale();
+
         $supportRequests = $request->user()
             ->supportRequests()
             ->with('category', 'volunteerMatches.supportSession', 'volunteerMatches.volunteerProfile.user')
             ->latest()
             ->paginate(10);
 
-        return view('support-requests.index', compact('supportRequests'));
+        // Volunteers also see the requests students sent to them, below their own.
+        $incomingMatches = $request->user()->volunteerProfile
+            ?->volunteerMatches()
+                ->with(['supportRequest.category', 'supportRequest.user'])
+                ->latest()
+                ->paginate(10, ['*'], 'incoming_page');
+
+        return view('support-requests.index', compact('supportRequests', 'incomingMatches'));
     }
 
     /**

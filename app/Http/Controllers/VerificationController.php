@@ -46,7 +46,10 @@ class VerificationController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('dashboard')->with('status', 'Your account is active. Welcome to HELP2U!');
+        return redirect()->route('dashboard')->with([
+            'status' => 'Your account is active. Welcome to HELP2U!',
+            'show_unread_popup' => true,
+        ]);
     }
 
     public function resend(Request $request, VerificationService $verification)

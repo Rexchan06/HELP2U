@@ -3,6 +3,10 @@
 @section('title', 'Find Volunteers - HELP2U')
 
 @section('content')
+    @if ($supportRequest)
+        <x-request-stepper :current="2" />
+    @endif
+
     <div class="flex items-start gap-6">
         <form method="GET" action="{{ route('volunteers.index') }}"
             style="width: 208px; flex-shrink: 0; background: #e8f1f9; border-radius: 8px; padding: 20px;">
