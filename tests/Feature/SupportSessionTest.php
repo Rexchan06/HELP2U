@@ -919,3 +919,44 @@ it('TC68 - store() function redirects a guest (not logged in) to the login page'
     $this->post(route('feedback.store', $session), ['rating' => 5])
         ->assertRedirect(route('login'));
 });
+
+// Feedback index() Test
+
+it('TC69 - index() function lists the feedback the student has given', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+    $fb = Feedback::create(['support_session_id' => $session->id, 'user_id' => $student->id, 'rating' => 5]);
+
+    $this->actingAs($student)->get(route('feedback.index'))
+        ->assertOk()
+        ->assertViewIs('feedback.index')
+        ->assertViewHas('feedback', fn ($list) => $list->pluck('id')->all() === [$fb->id]);
+});
+
+it('TC70 - index() function lists the feedback the volunteer has received', function () {
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+    $fb = Feedback::create(['support_session_id' => $session->id, 'user_id' => $student->id, 'rating' => 3, 'comment' => 'Good']);
+
+    $this->actingAs($volUser)->get(route('feedback.index'))
+        ->assertOk()
+        ->assertViewHas('feedback', fn ($list) => $list->pluck('id')->all() === [$fb->id])
+        ->assertSee('Good');
+});
+
+it('TC71 - index() function does not list other people\'s feedback', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+    Feedback::create(['support_session_id' => $session->id, 'user_id' => $student->id, 'rating' => 5]);
+
+    $this->actingAs(makeUser())->get(route('feedback.index'))
+        ->assertViewHas('feedback', fn ($list) => $list->isEmpty())
+        ->assertSee('No feedback yet');
+});
+
+it('TC72 - index() function redirects a guest (not logged in) to the login page', function () {
+    $this->get(route('feedback.index'))->assertRedirect(route('login'));
+});
