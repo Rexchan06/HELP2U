@@ -14,6 +14,7 @@ use App\Notifications\SessionCancelled;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\SessionRescheduled;
 use App\Notifications\SessionCompleted;
+use App\Models\Feedback;
 
 uses(RefreshDatabase::class);
 
@@ -784,5 +785,137 @@ it('TC58 - complete() function redirects a guest (not logged in) to the login pa
     $session = makeSession(makeMatch($student, $vp), now()->subHour());
 
     $this->patch(route('support-sessions.complete', $session))
+        ->assertRedirect(route('login'));
+});
+
+// Feedback store() Test
+
+function completedSession(User $student, VolunteerProfile $vp): SupportSession
+{
+    $session = makeSession(makeMatch($student, $vp), now()->subHours(2));
+    $session->update(['status' => SessionStatus::Completed, 'completed_at' => now()->subHour()]);
+
+    return $session;
+}
+
+it('TC59 - store() function saves a rating and comment for a completed session', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($student)->post(route('feedback.store', $session), [
+        'rating' => 4,
+        'comment' => 'Very helpful session.',
+    ])->assertRedirect(route('support-sessions.show', $session))
+      ->assertSessionHas('success', 'Thank you! Your feedback has been submitted.');
+
+    $this->assertDatabaseHas('feedback', [
+        'support_session_id' => $session->id,
+        'user_id' => $student->id,
+        'rating' => 4,
+        'comment' => 'Very helpful session.',
+    ]);
+});
+
+it('TC60 - store() function accepts a rating without a comment', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($student)->post(route('feedback.store', $session), ['rating' => 5])
+        ->assertSessionHasNoErrors();
+
+    expect(Feedback::first()->comment)->toBeNull();
+});
+
+it('TC61 - store() function rejects the form when the rating is empty', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($student)->post(route('feedback.store', $session), ['rating' => ''])
+        ->assertSessionHasErrors(['rating' => 'The rating field is required.']);
+
+    expect(Feedback::count())->toBe(0);
+});
+
+it('TC62 - store() function rejects a rating outside 1 to 5', function (int $rating) {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($student)->post(route('feedback.store', $session), ['rating' => $rating])
+        ->assertSessionHasErrors('rating');
+
+    expect(Feedback::count())->toBe(0);
+})->with([0, 6]);
+
+it('TC63 - store() function rejects a comment with 201 characters (over the limit)', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($student)->post(route('feedback.store', $session), [
+        'rating' => 4,
+        'comment' => str_repeat('A', 201),
+    ])->assertSessionHasErrors(['comment' => 'The comment field must not be greater than 200 characters.']);
+
+    expect(Feedback::count())->toBe(0);
+});
+
+it('TC64 - store() function accepts a comment with exactly 200 characters', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($student)->post(route('feedback.store', $session), [
+        'rating' => 4,
+        'comment' => str_repeat('A', 200),
+    ])->assertSessionHasNoErrors();
+
+    expect(strlen(Feedback::first()->comment))->toBe(200);
+});
+
+it('TC65 - store() function blocks feedback before the session is completed', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subHour()); // still SCHEDULED
+
+    $this->actingAs($student)->post(route('feedback.store', $session), ['rating' => 4])
+        ->assertSessionHas('failed', 'Feedback is only allowed after the session is completed.');
+
+    expect(Feedback::count())->toBe(0);
+});
+
+it('TC66 - store() function blocks a second feedback for the same session', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($student)->post(route('feedback.store', $session), ['rating' => 4])->assertSessionHasNoErrors();
+    $this->actingAs($student)->post(route('feedback.store', $session), ['rating' => 1])
+        ->assertSessionHas('failed', 'You have already given feedback for this session.');
+
+    expect(Feedback::count())->toBe(1)
+        ->and(Feedback::first()->rating)->toBe(4);
+});
+
+it('TC67 - store() function returns 403 (Forbidden) for the volunteer', function () {
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($volUser)->post(route('feedback.store', $session), ['rating' => 5])
+        ->assertForbidden();
+
+    expect(Feedback::count())->toBe(0);
+});
+
+it('TC68 - store() function redirects a guest (not logged in) to the login page', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->post(route('feedback.store', $session), ['rating' => 5])
         ->assertRedirect(route('login'));
 });
