@@ -9,6 +9,25 @@ use Illuminate\Http\Request;
 
 class FeedbackController extends Controller
 {
+    public function index()
+    {
+        $userId = auth()->id();
+
+        // Feedback the user gave as a student, or received as a volunteer
+        $feedback = Feedback::query()
+            ->whereHas('supportSession.volunteerMatch.supportRequest', fn ($q) => $q->where('user_id', $userId))
+            ->orWhereHas('supportSession.volunteerMatch.volunteerProfile', fn ($q) => $q->where('user_id', $userId))
+            ->with([
+                'supportSession.volunteerMatch.supportRequest.user',
+                'supportSession.volunteerMatch.supportRequest.category',
+                'supportSession.volunteerMatch.volunteerProfile.user',
+            ])
+            ->latest()
+            ->get();
+
+        return view('feedback.index', compact('feedback'));
+    }
+
     public function store(SupportSession $supportSession, Request $request)
     {
         if (auth()->id() != $supportSession->volunteerMatch->supportRequest->user_id) {

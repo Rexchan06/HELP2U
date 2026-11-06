@@ -54,4 +54,5 @@ Route::middleware('auth')->group(function () {
         ->name('support-sessions.complete');
     Route::post('/support-sessions/{supportSession}/feedback', [FeedbackController::class, 'store'])
         ->name('feedback.store');
+    Route::get('/feedback', [FeedbackController::class, 'index'])->name('feedback.index');
 });
