@@ -145,4 +145,41 @@ class VolunteerProfile extends Model
 
         return $avg === null ? null : round((float) $avg, 2);
     }
+
+    /**
+     * Free 1-hour slots over the next $daysAhead days, grouped by date.
+     */
+    public function openSlots(int $daysAhead = 14, int $duration = 60): array
+    {
+        $booked = SupportSession::query()
+            ->where('status', \App\Enums\SessionStatus::Scheduled)
+            ->whereHas('volunteerMatch', fn ($q) => $q->where('volunteer_profile_id', $this->id))
+            ->pluck('scheduled_start')
+            ->map(fn ($start) => \Illuminate\Support\Carbon::parse($start)->format('Y-m-d H:i'))
+            ->all();
+
+        $slotsByDate = [];
+
+        for ($i = 0; $i < $daysAhead; $i++) {
+            $date = now()->startOfDay()->addDays($i);
+
+            foreach ($this->availabilities->where('day_of_week', $date->dayOfWeek) as $availability) {
+                $slot = $date->copy()->setTimeFromTimeString($availability->start_time);
+                $windowEnd = $date->copy()->setTimeFromTimeString($availability->end_time);
+
+                while ($slot->copy()->addMinutes($duration)->lte($windowEnd)) {
+                    if ($slot->isFuture() && ! in_array($slot->format('Y-m-d H:i'), $booked, true)) {
+                        $slotsByDate[$date->toDateString()][] = $slot->copy();
+                    }
+                    $slot->addMinutes($duration);
+                }
+            }
+        }
+
+        foreach ($slotsByDate as $day => $slots) {
+            $slotsByDate[$day] = collect($slots)->sort()->values()->all();
+        }
+
+        return $slotsByDate;
+    }
 }

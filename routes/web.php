@@ -10,6 +10,7 @@ use App\Http\Controllers\VolunteerController;
 use App\Http\Controllers\VolunteerMatchController;
 use App\Http\Controllers\VolunteerProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\FeedbackController;
 
 Route::get('/', fn () => redirect()->route('login'));
 
@@ -43,4 +44,15 @@ Route::middleware('auth')->group(function () {
         ->name('support-sessions.index');
     Route::get('/support-sessions/{supportSession}', [SupportSessionController::class, 'show'])
         ->name('support-sessions.show');
+    Route::patch('/support-sessions/{supportSession}/cancel', [SupportSessionController::class, 'cancel'])
+        ->name('support-sessions.cancel');
+    Route::get('/support-sessions/{supportSession}/reschedule', [SupportSessionController::class, 'editSchedule'])
+        ->name('support-sessions.reschedule');
+    Route::patch('/support-sessions/{supportSession}/reschedule', [SupportSessionController::class, 'reschedule'])
+        ->name('support-sessions.reschedule.update');
+    Route::patch('/support-sessions/{supportSession}/complete', [SupportSessionController::class, 'complete'])
+        ->name('support-sessions.complete');
+    Route::post('/support-sessions/{supportSession}/feedback', [FeedbackController::class, 'store'])
+        ->name('feedback.store');
+    Route::get('/feedback', [FeedbackController::class, 'index'])->name('feedback.index');
 });
