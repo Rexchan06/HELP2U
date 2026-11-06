@@ -9,6 +9,7 @@
             'volunteerMatch.supportRequest.category',
             'volunteerMatch.volunteerProfile.user',
             'cancelledBy',
+            'feedback'
         ]);
 
         $supportRequest = $supportSession->volunteerMatch->supportRequest;
@@ -92,6 +93,59 @@
                 <p class="mt-4 text-sm text-gray-500">
                     Cancelled on {{ $supportSession->cancelled_at->format('j M Y, g:i A') }}
                     @if ($supportSession->cancelledBy) by {{ $supportSession->cancelledBy->name }}@endif.
+                </p>
+            @endif
+
+            {{-- Feedback --}}
+            @php $feedback = $supportSession->feedback; @endphp
+
+            @if ($feedback)
+                <div class="mt-6 rounded-lg border border-gray-200 px-4 py-3 text-sm">
+                    <p class="text-gray-500">{{ $isStudent ? 'Your feedback' : 'Feedback from ' . $supportRequest->user->name }}</p>
+                    <p class="mt-1 text-lg text-amber-500" aria-label="Rated {{ $feedback->rating }} out of 5">
+                        {{ str_repeat('★', $feedback->rating) }}<span class="text-gray-300">{{ str_repeat('★', 5 - $feedback->rating) }}</span>
+                    </p>
+                    @if ($feedback->comment)
+                        <p class="mt-1 whitespace-pre-line">{{ $feedback->comment }}</p>
+                    @endif
+                </div>
+            @elseif ($isStudent && $supportSession->status === \App\Enums\SessionStatus::Completed)
+                <form method="POST" action="{{ route('feedback.store', $supportSession) }}" class="mt-6 space-y-4 rounded-lg border border-gray-200 p-4">
+                    @csrf
+                    <fieldset>
+                        <legend class="text-sm font-semibold">How was your session?</legend>
+                        <div class="mt-2 flex gap-2">
+                            @foreach (range(1, 5) as $value)
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="rating" value="{{ $value }}" class="peer sr-only" @checked(old('rating') == $value) required>
+                                    <span class="inline-flex h-10 w-12 items-center justify-center rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 transition hover:border-gray-900 peer-checked:border-amber-500 peer-checked:bg-amber-500 peer-checked:text-white">
+                                        {{ $value }}★
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">1 = poor, 5 = excellent</p>
+                        @error('rating')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                    </fieldset>
+
+                    <div>
+                        <label for="comment" class="text-sm font-semibold">Comment <span class="font-normal text-gray-500">(optional)</span></label>
+                        <textarea id="comment" name="comment" rows="3" maxlength="200"
+                                  class="mt-2 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900">{{ old('comment') }}</textarea>
+                        @error('comment')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-700">
+                        Submit Feedback
+                    </button>
+                </form>
+            @elseif ($isStudent && $isScheduled)
+                <p class="mt-6 rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                    Feedback is only allowed after the session is completed.
+                </p>
+            @elseif (! $isStudent && $supportSession->status === \App\Enums\SessionStatus::Completed)
+                <p class="mt-6 rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                    Waiting for {{ $supportRequest->user->name }}'s feedback.
                 </p>
             @endif
 

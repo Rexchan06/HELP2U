@@ -10,6 +10,7 @@ use App\Http\Controllers\VolunteerController;
 use App\Http\Controllers\VolunteerMatchController;
 use App\Http\Controllers\VolunteerProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\FeedbackController;
 
 Route::get('/', fn () => redirect()->route('login'));
 
@@ -51,4 +52,6 @@ Route::middleware('auth')->group(function () {
         ->name('support-sessions.reschedule.update');
     Route::patch('/support-sessions/{supportSession}/complete', [SupportSessionController::class, 'complete'])
         ->name('support-sessions.complete');
+    Route::post('/support-sessions/{supportSession}/feedback', [FeedbackController::class, 'store'])
+        ->name('feedback.store');
 });
