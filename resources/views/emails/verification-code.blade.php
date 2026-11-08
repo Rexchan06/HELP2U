@@ -5,6 +5,9 @@
 
     @if ($purpose === \App\Enums\CodePurpose::Register)
         <p>Welcome to HELP2U. Your account is created once you verify your email. Open the link below and enter this code.</p>
+            @if ($link)
+                <p><a href="{{ $link }}">Verify your account</a></p>
+            @endif
     @elseif ($purpose === \App\Enums\CodePurpose::Reset)
         <p>We received a request to reset your HELP2U password. Enter this code to choose a new one.</p>
     @else
