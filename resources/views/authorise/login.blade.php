@@ -24,6 +24,7 @@
             <div>
                 <label for="password" class="block text-sm font-semibold">Password</label>
                 <input id="password" name="password" type="password" required class="{{ $inputClass }}">
+                <a href="{{ route('password.request') }}" class="text-sm font-medium text-gray-900 underline underline-offset-2">Forgot password?</a>
                 @error('password')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
             </div>
 
