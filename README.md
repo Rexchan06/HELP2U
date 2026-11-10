@@ -1,58 +1,161 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# HELP2U
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Students helping students.** HELP2U is a peer support platform for HELP University. Students post a support request (academic, technology, new student or general help), get matched with student volunteers who have the right skills and availability, and book a one-hour session face-to-face or online. After the session, the student rates it.
 
-## About Laravel
+Built for **BIT216 Software Engineering Principles** (Group 4) as a solution to the UniHELP case study.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Team and use cases
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Member | Use case | Branch |
+| --- | --- | --- |
+| Tan Yen Tze | UC1: Manage Student & Volunteer Profile | `tan_yen_tze` |
+| Kaung Myat Si Thu | UC2: Support Request & Volunteer Matching | `kaung_myat_si_thu` |
+| Chan Zi Hao (team lead) | UC3: Manage Support Sessions & Feedback | `chan_zi_hao` |
 
-## Learning Laravel
+## Features
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+**UC1: Accounts and profiles**
+- Registration restricted to `@helplive.edu.my` emails, activated with a 6-digit email code
+- Login with two-factor authentication (emailed code) and a limit on failed password attempts
+- Forgot password with a reset code
+- Student profile, plus an optional volunteer profile: support categories, skills, support modes and weekly availability
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**UC2: Requests and matching**
+- Create a support request with category, description, preferred time and mode
+- Volunteer search filtered by the request's category, with mode and day filters, ranked by availability on the preferred day, whether the volunteer is free to take a request, and average rating, with the top result marked "Best Match"
+- Send a request to a volunteer; the volunteer accepts or declines it
+- Requests not answered within 48 hours expire automatically
+- In-app notifications with an unread pop-up after login
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+**UC3: Sessions and feedback**
+- Book a one-hour session from the volunteer's available slots (double-booking is prevented)
+- Reschedule or cancel a session; the other participant is notified
+- The volunteer marks a session as completed once it has started
+- The student rates the session (1–5 stars) with an optional comment
+- Session and feedback history
 
-## Agentic Development
+## Tech stack
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+| Layer | Technology |
+| --- | --- |
+| Backend | Laravel 13 (PHP 8.4) |
+| Frontend | Blade templates, Tailwind CSS 4, Vite |
+| Database | SQLite (via Laravel migrations and seeders) |
+| Testing | Pest (feature and integration tests) |
+| CI | GitHub Actions: runs the full test suite on every push and pull request |
 
-```bash
-composer require laravel/boost --dev
+## Project structure
 
-php artisan boost:install
+Laravel keeps the frontend and backend in one project, so the code follows Laravel's standard layout instead of separate `frontend/` and `backend/` folders:
+
+```
+HELP2U/
+├── app/                  # Backend: controllers, models, enums, notifications, services
+├── resources/views/      # Frontend: Blade pages and components
+├── routes/               # web.php (pages) and console.php (scheduled jobs)
+├── database/
+│   ├── migrations/       # Database schema
+│   └── seeders/          # Categories, sample volunteers and demo accounts
+├── tests/Feature/        # Automated tests for all three use cases
+├── documents/            # Project plan, requirements and design documents
+├── .github/workflows/    # CI pipeline
+└── README.md
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Getting started
 
-## Contributing
+### Requirements
+- PHP 8.4 with the `pdo_sqlite` extension
+- Composer
+- Node.js 22 and npm
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Setup
 
-## Code of Conduct
+```bash
+git clone https://github.com/Rexchan06/HELP2U.git
+cd HELP2U
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+composer install
+npm install
+npm run build
 
-## Security Vulnerabilities
+cp .env.example .env          # Windows: copy .env.example .env
+php artisan key:generate
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+php artisan migrate:fresh --seed                 # schema, categories and sample volunteers
+php artisan db:seed --class=DemoSeeder           # demo accounts below
 
-## License
+php artisan serve
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Open http://localhost:8000. If `migrate` asks to create the SQLite database file, answer **yes**.
+
+### Email codes during development
+`.env.example` sets `MAIL_MAILER=log`, so no real emails are sent. Verification, login and password reset codes are written to `storage/logs/laravel.log`. Search for the latest 6-digit code there.
+
+### Sending real emails (optional)
+To deliver codes to real inboxes, set these in your local `.env` using a Gmail account with an [app password](https://support.google.com/accounts/answer/185833), then run `php artisan config:clear`:
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-account@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_FROM_ADDRESS="your-account@gmail.com"
+MAIL_FROM_NAME="HELP2U"
+```
+
+Never commit real credentials. `.env` is git-ignored for this reason. With SMTP on, the demo accounts below won't receive their codes because their addresses aren't real inboxes, so switch back to `MAIL_MAILER=log` to use them.
+
+### Request expiry job (optional)
+Requests also expire when someone opens the relevant pages. To run the hourly background check as well:
+
+```bash
+php artisan schedule:work
+```
+
+## Demo accounts
+
+All demo accounts use the password **`Demo1234`**. Login still asks for the emailed 2FA code (see above).
+
+| Name | Email | Role | Starting state |
+| --- | --- | --- | --- |
+| Alex Tan | alex.tan@helplive.edu.my | Student | Request accepted by Daniel, ready to book a session |
+| Mei Ling | mei.ling@helplive.edu.my | Student | Session already booked with Daniel |
+| Daniel Wong | daniel.wong@helplive.edu.my | Volunteer | Programming help, Mon–Fri 9am–5pm |
+| Priya Nair | priya.nair@helplive.edu.my | Volunteer | Campus orientation, Tue/Thu 10am–1pm |
+
+To reset everything to this state, run the two seed commands from Setup again.
+
+## Running the tests
+
+```bash
+php artisan test
+```
+
+On Windows, if `php artisan test` fails with a temporary file "Permission denied" error, run Pest directly:
+
+```bash
+vendor\bin\pest
+```
+
+Tests use an in-memory database, so they never touch your local data.
+
+## Development workflow
+
+- `master` holds the integrated, working version of the app.
+- Each member developed their use case on their own branch (see the team table) and kept it up to date with `master`.
+- Work was merged through **pull requests** using merge commits, so each member's commit history is kept.
+- Every push and pull request runs the test suite on GitHub Actions; pull requests are merged only when CI passes.
+- Fixes found during integration testing went through short-lived `hotfix/...` branches and their own pull requests.
+
+## Documentation
+
+Project documents are in [`documents/`](documents/):
+- Assignment 1 Task 1: Project Plan
+- Assignment 1 Task 2: Requirements Specification and Design
+- Iteration 1 presentation
+- UniHELP case study
