@@ -9,6 +9,7 @@
             'volunteerMatch.supportRequest.category',
             'volunteerMatch.volunteerProfile.user',
             'cancelledBy',
+            'feedback'
         ]);
 
         $supportRequest = $supportSession->volunteerMatch->supportRequest;
@@ -95,24 +96,86 @@
                 </p>
             @endif
 
-            {{-- Complete / cancel become live once their routes are added (iteration 2) --}}
+            {{-- Feedback --}}
+            @php $feedback = $supportSession->feedback; @endphp
+
+            @if ($feedback)
+                <div class="mt-6 rounded-lg border border-gray-200 px-4 py-3 text-sm">
+                    <p class="text-gray-500">{{ $isStudent ? 'Your feedback' : 'Feedback from ' . $supportRequest->user->name }}</p>
+                    <p class="mt-1 text-lg text-amber-500" aria-label="Rated {{ $feedback->rating }} out of 5">
+                        {{ str_repeat('★', $feedback->rating) }}<span class="text-gray-300">{{ str_repeat('★', 5 - $feedback->rating) }}</span>
+                    </p>
+                    @if ($feedback->comment)
+                        <p class="mt-1 whitespace-pre-line">{{ $feedback->comment }}</p>
+                    @endif
+                </div>
+            @elseif ($isStudent && $supportSession->status === \App\Enums\SessionStatus::Completed)
+                <form method="POST" action="{{ route('feedback.store', $supportSession) }}" class="mt-6 space-y-4 rounded-lg border border-gray-200 p-4">
+                    @csrf
+                    <fieldset>
+                        <legend class="text-sm font-semibold">How was your session?</legend>
+                        <div class="mt-2 flex gap-2">
+                            @foreach (range(1, 5) as $value)
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="rating" value="{{ $value }}" class="peer sr-only" @checked(old('rating') == $value) required>
+                                    <span class="inline-flex h-10 w-12 items-center justify-center rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 transition hover:border-gray-900 peer-checked:border-amber-500 peer-checked:bg-amber-500 peer-checked:text-white">
+                                        {{ $value }}★
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">1 = poor, 5 = excellent</p>
+                        @error('rating')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                    </fieldset>
+
+                    <div>
+                        <label for="comment" class="text-sm font-semibold">Comment <span class="font-normal text-gray-500">(optional)</span></label>
+                        <textarea id="comment" name="comment" rows="3" maxlength="200"
+                                  class="mt-2 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900">{{ old('comment') }}</textarea>
+                        @error('comment')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-700">
+                        Submit Feedback
+                    </button>
+                </form>
+            @elseif ($isStudent && $isScheduled)
+                <p class="mt-6 rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                    Feedback is only allowed after the session is completed.
+                </p>
+            @elseif (! $isStudent && $supportSession->status === \App\Enums\SessionStatus::Completed)
+                <p class="mt-6 rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                    Waiting for {{ $supportRequest->user->name }}'s feedback.
+                </p>
+            @endif
+
             @if ($isScheduled)
                 <div class="mt-8 space-y-2">
-                    @if (Route::has('support-sessions.complete'))
-                        <form method="POST" action="{{ route('support-sessions.complete', $supportSession) }}">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-700">
+                    @if (! $isStudent)
+                        @if ($start->isPast())
+                            <form method="POST" action="{{ route('support-sessions.complete', $supportSession) }}">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-700">
+                                    Mark as Completed
+                                </button>
+                            </form>
+                        @else
+                            <button type="button" disabled title="Available once the session has started"
+                                    class="w-full cursor-not-allowed rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white opacity-40">
                                 Mark as Completed
                             </button>
-                        </form>
-                    @else
-                        <button type="button" disabled class="w-full cursor-not-allowed rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white opacity-40">
-                            Mark as Completed
-                        </button>
+                        @endif
                     @endif
 
-                    @if (Route::has('support-sessions.cancel'))
+                    @if ($isStudent && $start->isFuture())
+                        <a href="{{ route('support-sessions.reschedule', $supportSession) }}"
+                           class="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-sm font-semibold text-gray-700 transition hover:border-gray-900 hover:text-gray-900">
+                            Reschedule
+                        </a>
+                    @endif
+
+                    @if ($start->isFuture())
                         <form method="POST" action="{{ route('support-sessions.cancel', $supportSession) }}">
                             @csrf
                             @method('PATCH')
@@ -120,10 +183,6 @@
                                 Cancel Session
                             </button>
                         </form>
-                    @else
-                        <button type="button" disabled class="w-full cursor-not-allowed rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 opacity-40">
-                            Cancel Session
-                        </button>
                     @endif
                 </div>
             @endif

@@ -6,6 +6,7 @@ use App\Enums\MatchStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Enums\SessionStatus; 
 
 class VolunteerMatch extends Model
 {

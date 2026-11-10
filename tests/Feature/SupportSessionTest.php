@@ -9,6 +9,12 @@ use App\Models\User;
 use App\Models\VolunteerMatch;
 use App\Models\VolunteerProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Enums\SessionStatus;
+use App\Notifications\SessionCancelled;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\SessionRescheduled;
+use App\Notifications\SessionCompleted;
+use App\Models\Feedback;
 
 uses(RefreshDatabase::class);
 
@@ -465,4 +471,516 @@ it('TC33 - store() function rejects an empty location for a face-to-face session
     ])->assertSessionHasErrors(['location' => 'The location field is required.']);
  
     expect(SupportSession::count())->toBe(0);
+});
+
+// cancel() Test
+
+it('TC34 - cancel() function lets the student cancel and notifies the volunteer', function () {
+    Notification::fake();
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp));
+
+    $this->actingAs($student)->patch(route('support-sessions.cancel', $session))
+        ->assertRedirect(route('support-sessions.show', $session))
+        ->assertSessionHas('success', 'Session cancelled. The other participant has been notified.');
+
+    $session->refresh();
+    expect($session->status)->toBe(SessionStatus::Cancelled)
+        ->and($session->cancelled_by)->toBe($student->id)
+        ->and($session->cancelled_at)->not->toBeNull();
+    Notification::assertSentTo($volUser, SessionCancelled::class);
+    Notification::assertNotSentTo($student, SessionCancelled::class);
+});
+
+it('TC35 - cancel() function lets the volunteer cancel and notifies the student', function () {
+    Notification::fake();
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp));
+
+    $this->actingAs($volUser)->patch(route('support-sessions.cancel', $session))
+        ->assertSessionHas('success');
+
+    expect($session->fresh()->cancelled_by)->toBe($volUser->id);
+    Notification::assertSentTo($student, SessionCancelled::class);
+    Notification::assertNotSentTo($volUser, SessionCancelled::class);
+});
+
+it('TC36 - cancel() function returns 403 (Forbidden) for a user who is not in the session', function () {
+    Notification::fake();
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp));
+
+    $this->actingAs(makeUser())->patch(route('support-sessions.cancel', $session))
+        ->assertForbidden();
+
+    expect($session->fresh()->status)->toBe(SessionStatus::Scheduled);
+    Notification::assertNothingSent();
+});
+
+it('TC37 - cancel() function blocks cancelling a session that is already cancelled', function () {
+    Notification::fake();
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp));
+    $session->update(['status' => SessionStatus::Cancelled]);
+
+    $this->actingAs($student)->patch(route('support-sessions.cancel', $session))
+        ->assertSessionHas('failed', 'Only scheduled sessions can be cancelled.');
+
+    Notification::assertNothingSent();
+});
+
+it('TC38 - cancel() function blocks cancelling a completed session', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp));
+    $session->update(['status' => SessionStatus::Completed]);
+
+    $this->actingAs($student)->patch(route('support-sessions.cancel', $session))
+        ->assertSessionHas('failed', 'Only scheduled sessions can be cancelled.');
+
+    expect($session->fresh()->status)->toBe(SessionStatus::Completed);
+});
+
+it('TC39 - cancel() function blocks cancelling a session that has already started', function () {
+    Notification::fake();
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subMinutes(10));
+
+    $this->actingAs($student)->patch(route('support-sessions.cancel', $session))
+        ->assertSessionHas('failed', 'This session has already started and can no longer be cancelled.');
+
+    expect($session->fresh()->status)->toBe(SessionStatus::Scheduled);
+    Notification::assertNothingSent();
+});
+
+it('TC40 - cancel() function redirects a guest (not logged in) to the login page', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp));
+
+    $this->patch(route('support-sessions.cancel', $session))
+        ->assertRedirect(route('login'));
+});
+
+// editSchedule() and reschedule() Test
+
+it('TC41 - editSchedule() function shows the reschedule page to the student', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), at('10:00'));
+
+    $this->actingAs($student)->get(route('support-sessions.reschedule', $session))
+        ->assertOk()
+        ->assertViewIs('support-sessions.reschedule');
+});
+
+it('TC42 - editSchedule() function returns 403 (Forbidden) for the volunteer', function () {
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), at('10:00'));
+
+    $this->actingAs($volUser)->get(route('support-sessions.reschedule', $session))
+        ->assertForbidden();
+});
+
+it('TC43 - reschedule() function moves the session to the new time and notifies the volunteer', function () {
+    Notification::fake();
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), at('10:00'));
+
+    $this->actingAs($student)->patch(route('support-sessions.reschedule.update', $session), [
+        'scheduled_start' => at('14:00'),
+    ])->assertRedirect(route('support-sessions.show', $session))
+      ->assertSessionHas('success', 'Session rescheduled. The volunteer has been notified.');
+
+    expect($session->fresh()->scheduled_start->format('Y-m-d H:i:s'))->toBe(at('14:00'));
+    Notification::assertSentTo($volUser, SessionRescheduled::class);
+    Notification::assertNotSentTo($student, SessionRescheduled::class);
+});
+
+it('TC44 - reschedule() function rejects a time outside the volunteer\'s availability', function () {
+    Notification::fake();
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), at('10:00'));
+
+    $this->actingAs($student)->patch(route('support-sessions.reschedule.update', $session), [
+        'scheduled_start' => at('18:00'),
+    ])->assertSessionHasErrors(['scheduled_start' => 'Please choose a time within the volunteer\'s availability.']);
+
+    expect($session->fresh()->scheduled_start->format('Y-m-d H:i:s'))->toBe(at('10:00'));
+    Notification::assertNothingSent();
+});
+
+it('TC45 - reschedule() function rejects a time the volunteer is already booked for', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), at('10:00'));
+    makeSession(makeMatch(makeUser(), $vp), at('14:00')); // another student already has 2 PM
+
+    $this->actingAs($student)->patch(route('support-sessions.reschedule.update', $session), [
+        'scheduled_start' => at('14:00'),
+    ])->assertSessionHasErrors(['scheduled_start' => 'That time slot has just been booked. Please pick another.']);
+
+    expect($session->fresh()->scheduled_start->format('Y-m-d H:i:s'))->toBe(at('10:00'));
+});
+
+it('TC46 - reschedule() function rejects the same time as the current booking', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), at('10:00'));
+
+    $this->actingAs($student)->patch(route('support-sessions.reschedule.update', $session), [
+        'scheduled_start' => at('10:00'),
+    ])->assertSessionHasErrors(['scheduled_start' => 'Please choose a different time from the current one.']);
+});
+
+it('TC47 - reschedule() function rejects a new time in the past', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), at('10:00'));
+
+    $this->actingAs($student)->patch(route('support-sessions.reschedule.update', $session), [
+        'scheduled_start' => now()->subDay()->format('Y-m-d H:i:s'),
+    ])->assertSessionHasErrors(['scheduled_start' => 'The scheduled start field must be a date after now.']);
+});
+
+it('TC48 - reschedule() function blocks rescheduling a cancelled session', function () {
+    Notification::fake();
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), at('10:00'));
+    $session->update(['status' => SessionStatus::Cancelled]);
+
+    $this->actingAs($student)->patch(route('support-sessions.reschedule.update', $session), [
+        'scheduled_start' => at('14:00'),
+    ])->assertSessionHas('failed', 'Only scheduled sessions can be rescheduled.');
+
+    expect($session->fresh()->scheduled_start->format('Y-m-d H:i:s'))->toBe(at('10:00'));
+    Notification::assertNothingSent();
+});
+
+it('TC49 - reschedule() function blocks rescheduling a session that has already started', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subMinutes(10));
+
+    $this->actingAs($student)->patch(route('support-sessions.reschedule.update', $session), [
+        'scheduled_start' => at('14:00'),
+    ])->assertSessionHas('failed', 'This session has already started and can no longer be rescheduled.');
+});
+
+it('TC50 - reschedule() function returns 403 (Forbidden) for the volunteer', function () {
+    Notification::fake();
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), at('10:00'));
+
+    $this->actingAs($volUser)->patch(route('support-sessions.reschedule.update', $session), [
+        'scheduled_start' => at('14:00'),
+    ])->assertForbidden();
+
+    expect($session->fresh()->scheduled_start->format('Y-m-d H:i:s'))->toBe(at('10:00'));
+    Notification::assertNothingSent();
+});
+
+it('TC51 - reschedule() function redirects a guest (not logged in) to the login page', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), at('10:00'));
+
+    $this->patch(route('support-sessions.reschedule.update', $session), [
+        'scheduled_start' => at('14:00'),
+    ])->assertRedirect(route('login'));
+});
+
+// complete() Test
+
+it('TC52 - complete() function lets the volunteer complete a session that has started and notifies the student', function () {
+    Notification::fake();
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subHour());
+
+    $this->actingAs($volUser)->patch(route('support-sessions.complete', $session))
+        ->assertRedirect(route('support-sessions.show', $session))
+        ->assertSessionHas('success', 'Session marked as completed. The student can now leave feedback.');
+
+    $session->refresh();
+    expect($session->status)->toBe(SessionStatus::Completed)
+        ->and($session->completed_at)->not->toBeNull();
+    Notification::assertSentTo($student, SessionCompleted::class);
+    Notification::assertNotSentTo($volUser, SessionCompleted::class);
+});
+
+it('TC53 - complete() function returns 403 (Forbidden) for the student', function () {
+    Notification::fake();
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subHour());
+
+    $this->actingAs($student)->patch(route('support-sessions.complete', $session))
+        ->assertForbidden();
+
+    expect($session->fresh()->status)->toBe(SessionStatus::Scheduled);
+    Notification::assertNothingSent();
+});
+
+it('TC54 - complete() function returns 403 (Forbidden) for a user who is not in the session', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subHour());
+
+    $this->actingAs(makeUser())->patch(route('support-sessions.complete', $session))
+        ->assertForbidden();
+});
+
+it('TC55 - complete() function blocks completing a session that has not started yet', function () {
+    Notification::fake();
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), at('10:00'));
+
+    $this->actingAs($volUser)->patch(route('support-sessions.complete', $session))
+        ->assertSessionHas('failed', 'This session has not started yet.');
+
+    expect($session->fresh()->status)->toBe(SessionStatus::Scheduled);
+    Notification::assertNothingSent();
+});
+
+it('TC56 - complete() function blocks completing a cancelled session', function () {
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subHour());
+    $session->update(['status' => SessionStatus::Cancelled]);
+
+    $this->actingAs($volUser)->patch(route('support-sessions.complete', $session))
+        ->assertSessionHas('failed', 'Only scheduled sessions can be marked as completed.');
+
+    expect($session->fresh()->status)->toBe(SessionStatus::Cancelled);
+});
+
+it('TC57 - complete() function blocks completing a session that is already completed', function () {
+    Notification::fake();
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subHour());
+    $session->update(['status' => SessionStatus::Completed]);
+
+    $this->actingAs($volUser)->patch(route('support-sessions.complete', $session))
+        ->assertSessionHas('failed', 'Only scheduled sessions can be marked as completed.');
+
+    Notification::assertNothingSent();
+});
+
+it('TC58 - complete() function redirects a guest (not logged in) to the login page', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subHour());
+
+    $this->patch(route('support-sessions.complete', $session))
+        ->assertRedirect(route('login'));
+});
+
+// Feedback store() Test
+
+function completedSession(User $student, VolunteerProfile $vp): SupportSession
+{
+    $session = makeSession(makeMatch($student, $vp), now()->subHours(2));
+    $session->update(['status' => SessionStatus::Completed, 'completed_at' => now()->subHour()]);
+
+    return $session;
+}
+
+it('TC59 - store() function saves a rating and comment for a completed session', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($student)->post(route('feedback.store', $session), [
+        'rating' => 4,
+        'comment' => 'Very helpful session.',
+    ])->assertRedirect(route('support-sessions.show', $session))
+      ->assertSessionHas('success', 'Thank you! Your feedback has been submitted.');
+
+    $this->assertDatabaseHas('feedback', [
+        'support_session_id' => $session->id,
+        'user_id' => $student->id,
+        'rating' => 4,
+        'comment' => 'Very helpful session.',
+    ]);
+});
+
+it('TC60 - store() function accepts a rating without a comment', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($student)->post(route('feedback.store', $session), ['rating' => 5])
+        ->assertSessionHasNoErrors();
+
+    expect(Feedback::first()->comment)->toBeNull();
+});
+
+it('TC61 - store() function rejects the form when the rating is empty', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($student)->post(route('feedback.store', $session), ['rating' => ''])
+        ->assertSessionHasErrors(['rating' => 'The rating field is required.']);
+
+    expect(Feedback::count())->toBe(0);
+});
+
+it('TC62 - store() function rejects a rating outside 1 to 5', function (int $rating) {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($student)->post(route('feedback.store', $session), ['rating' => $rating])
+        ->assertSessionHasErrors('rating');
+
+    expect(Feedback::count())->toBe(0);
+})->with([0, 6]);
+
+it('TC63 - store() function rejects a comment with 201 characters (over the limit)', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($student)->post(route('feedback.store', $session), [
+        'rating' => 4,
+        'comment' => str_repeat('A', 201),
+    ])->assertSessionHasErrors(['comment' => 'The comment field must not be greater than 200 characters.']);
+
+    expect(Feedback::count())->toBe(0);
+});
+
+it('TC64 - store() function accepts a comment with exactly 200 characters', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($student)->post(route('feedback.store', $session), [
+        'rating' => 4,
+        'comment' => str_repeat('A', 200),
+    ])->assertSessionHasNoErrors();
+
+    expect(strlen(Feedback::first()->comment))->toBe(200);
+});
+
+it('TC65 - store() function blocks feedback before the session is completed', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = makeSession(makeMatch($student, $vp), now()->subHour()); // still SCHEDULED
+
+    $this->actingAs($student)->post(route('feedback.store', $session), ['rating' => 4])
+        ->assertSessionHas('failed', 'Feedback is only allowed after the session is completed.');
+
+    expect(Feedback::count())->toBe(0);
+});
+
+it('TC66 - store() function blocks a second feedback for the same session', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($student)->post(route('feedback.store', $session), ['rating' => 4])->assertSessionHasNoErrors();
+    $this->actingAs($student)->post(route('feedback.store', $session), ['rating' => 1])
+        ->assertSessionHas('failed', 'You have already given feedback for this session.');
+
+    expect(Feedback::count())->toBe(1)
+        ->and(Feedback::first()->rating)->toBe(4);
+});
+
+it('TC67 - store() function returns 403 (Forbidden) for the volunteer', function () {
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->actingAs($volUser)->post(route('feedback.store', $session), ['rating' => 5])
+        ->assertForbidden();
+
+    expect(Feedback::count())->toBe(0);
+});
+
+it('TC68 - store() function redirects a guest (not logged in) to the login page', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+
+    $this->post(route('feedback.store', $session), ['rating' => 5])
+        ->assertRedirect(route('login'));
+});
+
+// Feedback index() Test
+
+it('TC69 - index() function lists the feedback the student has given', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+    $fb = Feedback::create(['support_session_id' => $session->id, 'user_id' => $student->id, 'rating' => 5]);
+
+    $this->actingAs($student)->get(route('feedback.index'))
+        ->assertOk()
+        ->assertViewIs('feedback.index')
+        ->assertViewHas('feedback', fn ($list) => $list->pluck('id')->all() === [$fb->id]);
+});
+
+it('TC70 - index() function lists the feedback the volunteer has received', function () {
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+    $fb = Feedback::create(['support_session_id' => $session->id, 'user_id' => $student->id, 'rating' => 3, 'comment' => 'Good']);
+
+    $this->actingAs($volUser)->get(route('feedback.index'))
+        ->assertOk()
+        ->assertViewHas('feedback', fn ($list) => $list->pluck('id')->all() === [$fb->id])
+        ->assertSee('Good');
+});
+
+it('TC71 - index() function does not list other people\'s feedback', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $session = completedSession($student, $vp);
+    Feedback::create(['support_session_id' => $session->id, 'user_id' => $student->id, 'rating' => 5]);
+
+    $this->actingAs(makeUser())->get(route('feedback.index'))
+        ->assertViewHas('feedback', fn ($list) => $list->isEmpty())
+        ->assertSee('No feedback yet');
+});
+
+it('TC72 - index() function redirects a guest (not logged in) to the login page', function () {
+    $this->get(route('feedback.index'))->assertRedirect(route('login'));
+});
+
+// Support request is closed once its session ends (per data dictionary)
+
+it('TC73 - cancel() function marks the support request as CLOSED', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $match = makeMatch($student, $vp);
+    $session = makeSession($match);
+
+    $this->actingAs($student)->patch(route('support-sessions.cancel', $session));
+
+    expect($match->supportRequest->fresh()->status)->toBe(RequestStatus::Closed);
+});
+
+it('TC74 - complete() function marks the support request as CLOSED', function () {
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $match = makeMatch($student, $vp);
+    $session = makeSession($match, now()->subHour());
+
+    $this->actingAs($volUser)->patch(route('support-sessions.complete', $session));
+
+    expect($match->supportRequest->fresh()->status)->toBe(RequestStatus::Closed);
 });

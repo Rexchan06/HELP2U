@@ -1,74 +1,50 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Verify your account - HELP2U</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-<div class="auth">
-    <aside class="auth-side">
-        <a href="{{ route('login') }}" class="brand">HELP2U</a>
-        <div>
-            <h1>Students helping students.</h1>
-            <p>Ask for support, or offer your own skills to other students at your university.</p>
-            <ul class="topics">
-                <li><strong>Academic support</strong><span>Mathematics, programming, study techniques</span></li>
-                <li><strong>Technology support</strong><span>Software installation, basic computer help</span></li>
-                <li><strong>New student support</strong><span>Campus orientation and student life</span></li>
-                <li><strong>General student support</strong><span>Non-academic help and peer guidance</span></li>
-            </ul>
-        </div>
-    </aside>
+@extends('layouts.guest')
 
-    <main class="auth-main">
-        <div class="auth-card">
-            <div class="alert alert-success" role="status">Account created. We sent a verification link and a 6-digit code to aisha.rahman@student.example.edu.</div>
+@section('title', 'Verify your account - HELP2U')
 
-            <h2>Verify your account</h2>
-            <p class="lead">Enter the 6-digit code we sent to <strong>aisha.rahman@student.example.edu</strong>, then choose a password.</p>
+@section('content')
+    @php
+        $inputClass = 'mt-2 block w-full rounded-lg border border-gray-300 px-3 py-3 text-center text-xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-gray-900';
+    @endphp
 
-            @if (session('status'))
-            <div class="alert alert-success" role="status">{{ session('status') }}</div>
-            @endif
+    <div class="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+        @if (session('status'))
+            <div class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">
+                {{ session('status') }}
+            </div>
+        @endif
 
-            <form method="POST" action="{{ route('verify.store') }}">
-                @csrf
-                <input type="hidden" name="email" value="{{ $email }}">
+        <h2 class="text-2xl font-bold tracking-tight">Verify your account</h2>
+        <p class="mt-2 text-sm text-gray-500">
+            Enter the 6-digit code we sent to <strong class="text-gray-900">{{ $email }}</strong>.
+            It expires in 10 minutes. Your account is created once you verify it.
+        </p>
 
-                <div class="field">
-                    <label for="code">6-digit code</label>
-                    <input id="code" name="code" type="text" class="otp" inputmode="numeric" maxlength="6" required>
-                    @error('code')<p class="error">{{ $message }}</p>@enderror
-                </div>
+        <form method="POST" action="{{ route('verification.store', $token) }}" class="mt-6 space-y-5">
+            @csrf
 
-                <div class="field">
-                    <label for="password">New password</label>
-                    <input id="password" name="password" type="password" required>
-                    @error('password')<p class="error">{{ $message }}</p>@enderror
-                </div>
+            <div>
+                <label for="code" class="block text-sm font-semibold">6-digit code</label>
+                <input id="code" name="code" type="text" inputmode="numeric" maxlength="6" pattern="[0-9]{6}"
+                    placeholder="000000" autocomplete="one-time-code" required autofocus
+                    class="{{ $inputClass }}">
+                @error('code')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+            </div>
 
-                <div class="field">
-                    <label for="password_confirmation">Confirm password</label>
-                    <input id="password_confirmation" name="password_confirmation" type="password" required>
-                </div>
+            <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-700">
+                Activate account
+            </button>
+        </form>
 
-                <button type="submit" class="btn btn-primary">Activate account</button>
-            </form>
+        <form method="POST" action="{{ route('verification.resend', $token) }}" class="mt-6 text-center">
+            @csrf
+            <button type="submit" class="text-sm font-medium text-gray-900 underline underline-offset-2">
+                Send a new code
+            </button>
+        </form>
 
-            <form method="POST" action="{{ route('verify.resend') }}" class="inline-form">
-                @csrf
-                <input type="hidden" name="email" value="{{ $email }}">
-                <button type="submit" class="link-btn">Send a new code</button>
-            </form>
-
-            <p class="inline-form"><a href="{{ route('verify') }}" class="link-btn">Send a new code</a></p>
-        </div>
-    </main>
-</div>
-</body>
-</html>
+        <p class="mt-3 text-center text-sm text-gray-500">
+            <a href="{{ route('register') }}" class="font-medium text-gray-900 underline underline-offset-2">Back to registration</a>
+        </p>
+    </div>
+@endsection

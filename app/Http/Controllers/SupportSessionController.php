@@ -12,6 +12,10 @@ use App\Enums\SupportMode;
 use Illuminate\Validation\Rule;
 use App\Enums\SessionStatus;
 use Illuminate\Support\Carbon;
+use App\Notifications\SessionCancelled;
+use App\Models\VolunteerMatch;
+use App\Notifications\SessionRescheduled;
+use App\Notifications\SessionCompleted;
 
 class SupportSessionController extends Controller
 {
@@ -68,19 +72,9 @@ class SupportSessionController extends Controller
         ]);
 
         $start = Carbon::parse($validated['scheduled_start']);
-        $end = $start->copy()->addHour();
 
-        $fitsAvailability = $match->volunteerProfile->availabilities
-            ->where('day_of_week', $start->dayOfWeek)
-            ->contains(fn ($availability) =>
-                $start->gte($start->copy()->setTimeFromTimeString($availability->start_time))
-                && $end->lte($start->copy()->setTimeFromTimeString($availability->end_time))
-            );
-
-        if (! $fitsAvailability) {
-            return back()
-                ->withErrors(['scheduled_start' => 'Please choose a time within the volunteer\'s availability.'])
-                ->withInput();
+        if ($error = $this->slotError($match, $start)) {
+            return back()->withErrors(['scheduled_start' => $error])->withInput();
         }
 
         $alreadyBooked = SupportSession::query()
@@ -133,5 +127,161 @@ class SupportSessionController extends Controller
         }
 
         return view('support-sessions.show', compact('supportSession'));
+    }
+
+    public function cancel(SupportSession $supportSession)
+    {
+        $userId = auth()->id();
+        $student = $supportSession->volunteerMatch->supportRequest->user;
+        $volunteer = $supportSession->volunteerMatch->volunteerProfile->user;
+
+        if ($userId != $student->id && $userId != $volunteer->id) {
+            abort(403);
+        }
+
+        if ($supportSession->status !== SessionStatus::Scheduled) {
+            return back()->with('failed', 'Only scheduled sessions can be cancelled.');
+        }
+
+        if ($supportSession->scheduled_start->isPast()) {
+            return back()->with('failed', 'This session has already started and can no longer be cancelled.');
+        }
+
+        DB::transaction(function () use ($supportSession, $userId) {
+            $supportSession->update([
+                'status' => SessionStatus::Cancelled,
+                'cancelled_at' => now(),
+                'cancelled_by' => $userId,
+            ]);
+
+            $supportSession->volunteerMatch->supportRequest
+                ->update(['status' => RequestStatus::Closed]);
+        });
+
+        // Notify the other participant
+        $otherParty = $userId == $student->id ? $volunteer : $student;
+        $otherParty->notify(new SessionCancelled($supportSession, auth()->user()));
+
+        return redirect()
+            ->route('support-sessions.show', $supportSession)
+            ->with('success', 'Session cancelled. The other participant has been notified.');
+    }
+
+    // Shared checks for editSchedule() and reschedule()
+    private function rescheduleError(SupportSession $supportSession): ?string
+    {
+        if (auth()->id() != $supportSession->volunteerMatch->supportRequest->user_id) {
+            abort(403);
+        }
+
+        if ($supportSession->status !== SessionStatus::Scheduled) {
+            return 'Only scheduled sessions can be rescheduled.';
+        }
+
+        if ($supportSession->scheduled_start->isPast()) {
+            return 'This session has already started and can no longer be rescheduled.';
+        }
+
+        return null;
+    }
+
+    public function editSchedule(SupportSession $supportSession)
+    {
+        if ($error = $this->rescheduleError($supportSession)) {
+            return back()->with('failed', $error);
+        }
+
+        return view('support-sessions.reschedule', compact('supportSession'));
+    }
+
+    public function reschedule(SupportSession $supportSession, Request $request)
+    {
+        if ($error = $this->rescheduleError($supportSession)) {
+            return back()->with('failed', $error);
+        }
+
+        $validated = $request->validate([
+            'scheduled_start' => 'required|date|after:now',
+        ]);
+
+        $start = Carbon::parse($validated['scheduled_start']);
+
+        if ($start->eq($supportSession->scheduled_start)) {
+            return back()
+                ->withErrors(['scheduled_start' => 'Please choose a different time from the current one.'])
+                ->withInput();
+        }
+
+        $match = $supportSession->volunteerMatch;
+
+        if ($error = $this->slotError($match, $start, $supportSession->id)) {
+            return back()->withErrors(['scheduled_start' => $error])->withInput();
+        }
+
+        $oldStart = $supportSession->scheduled_start->copy();
+        $supportSession->update(['scheduled_start' => $start]);
+
+        $match->volunteerProfile->user->notify(new SessionRescheduled($supportSession, $oldStart));
+
+        return redirect()
+            ->route('support-sessions.show', $supportSession)
+            ->with('success', 'Session rescheduled. The volunteer has been notified.');
+    }
+
+    public function complete(SupportSession $supportSession)
+    {
+        if (auth()->id() != $supportSession->volunteerMatch->volunteerProfile->user_id) {
+            abort(403);
+        }
+
+        if ($supportSession->status !== SessionStatus::Scheduled) {
+            return back()->with('failed', 'Only scheduled sessions can be marked as completed.');
+        }
+
+        if ($supportSession->scheduled_start->isFuture()) {
+            return back()->with('failed', 'This session has not started yet.');
+        }
+
+        DB::transaction(function () use ($supportSession) {
+            $supportSession->update([
+                'status' => SessionStatus::Completed,
+                'completed_at' => now(),
+            ]);
+
+            $supportSession->volunteerMatch->supportRequest
+                ->update(['status' => RequestStatus::Closed]);
+        });
+
+        $supportSession->volunteerMatch->supportRequest->user
+            ->notify(new SessionCompleted($supportSession));
+
+        return redirect()
+            ->route('support-sessions.show', $supportSession)
+            ->with('success', 'Session marked as completed. The student can now leave feedback.');
+    }
+
+    private function slotError(VolunteerMatch $match, Carbon $start, ?int $ignoreSessionId = null): ?string
+    {
+        $end = $start->copy()->addHour();
+
+        $fitsAvailability = $match->volunteerProfile->availabilities
+            ->where('day_of_week', $start->dayOfWeek)
+            ->contains(fn ($availability) =>
+                $start->gte($start->copy()->setTimeFromTimeString($availability->start_time))
+                && $end->lte($start->copy()->setTimeFromTimeString($availability->end_time))
+            );
+
+        if (! $fitsAvailability) {
+            return 'Please choose a time within the volunteer\'s availability.';
+        }
+
+        $alreadyBooked = SupportSession::query()
+            ->where('scheduled_start', $start)
+            ->where('status', SessionStatus::Scheduled)
+            ->when($ignoreSessionId, fn ($q) => $q->whereKeyNot($ignoreSessionId))
+            ->whereHas('volunteerMatch', fn ($q) => $q->where('volunteer_profile_id', $match->volunteer_profile_id))
+            ->exists();
+
+        return $alreadyBooked ? 'That time slot has just been booked. Please pick another.' : null;
     }
 }

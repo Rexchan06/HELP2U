@@ -6,42 +6,55 @@ use App\Models\User;
 use App\Services\VerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 
 class VerificationController extends Controller
 {
-    public function show(Request $request)
+    public function show(string $token, VerificationService $verification)
     {
-        $user = User::where('email', $request->query('email'))->firstOrFail();
+        $pending = $verification->pendingRegistration($token);
 
-        if ($user->email_verified_at) {
-            return redirect()->route('login')->with('status', 'Your account is already verified. Please log in.');
+        if (! $pending) {
+            return redirect()->route('register')
+                ->with('status', 'This verification link has expired. Please register again.');
         }
 
-        return view('authorise.verify', ['email' => $user->email]);
+        return view('authorise.verify', ['token' => $token, 'email' => $pending['email']]);
     }
 
-    public function store(Request $request, VerificationService $verification)
+    public function store(Request $request, string $token, VerificationService $verification)
     {
-        $request->validate([
-            'email'    => ['required', 'email'],
-            'code'     => ['required', 'digits:6'],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
-        ]);
+        $request->validate(['code' => ['required', 'digits:6']]);
 
-        $user = User::where('email', $request->email)->whereNull('email_verified_at')->first();
+        $pending = $verification->pendingRegistration($token);
 
-        if (! $user || ! $verification->checkCode($user, 'register', $request->code)) {
-            return back()->withErrors([
-                'code' => 'This code is invalid or has expired. Select "Send a new code" to get another one.',
-            ]);
+        if (! $pending) {
+            return redirect()->route('register')
+                ->with('status', 'This verification has expired. Please register again.');
         }
 
-        $user->forceFill([
-            'password'          => Hash::make($request->password),
+        // Wrong or expired code: show the message and let the student ask for a new one.
+        if ($error = $verification->checkRegistrationCode($token, $request->code)) {
+            return back()->withErrors(['code' => $error]);
+        }
+
+        // Someone may have registered the same email or student ID while this one was waiting.
+        if (User::where('email', $pending['email'])->orWhere('student_id', $pending['student_id'])->exists()) {
+            $verification->forgetRegistration($token);
+
+            return redirect()->route('login')
+                ->with('status', 'An account already exists for these details. Please log in.');
+        }
+
+        // The code is correct: only now is the account saved in the users table.
+        $user = User::forceCreate([
+            'student_id'        => $pending['student_id'],
+            'name'              => $pending['name'],
+            'email'             => $pending['email'],
+            'password'          => $pending['password_hash'],
             'email_verified_at' => now(),
-        ])->save();
+        ]);
+
+        $verification->forgetRegistration($token);
 
         Auth::login($user);
         $request->session()->regenerate();
@@ -52,12 +65,11 @@ class VerificationController extends Controller
         ]);
     }
 
-    public function resend(Request $request, VerificationService $verification)
+    public function resend(string $token, VerificationService $verification)
     {
-        $user = User::where('email', $request->email)->whereNull('email_verified_at')->first();
-
-        if ($user) {
-            $verification->sendCode($user, 'register');
+        if (! $verification->resendRegistrationCode($token)) {
+            return redirect()->route('register')
+                ->with('status', 'This verification has expired. Please register again.');
         }
 
         return back()->with('status', 'We sent a new code to your email.');

@@ -8,6 +8,8 @@ use App\Models\SupportSession;
 use App\Models\User;
 use App\Models\VolunteerMatch;
 use App\Models\VolunteerProfile;
+use App\Mail\VerificationCodeMail;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -59,17 +61,24 @@ function integSlot(): string
 
 // UC1 (login / logout) with UC3
 
-it('IT1 - a student who logs in through the UC1 login page can open My Sessions (UC3)', function () {
+it('IT1 - a student who logs in through the UC1 login page (with 2FA) can open My Sessions (UC3)', function () {
+    Mail::fake();
     $student = User::factory()->create(['email' => 'alex@student.test']);
 
     $this->post(route('login.store'), [
         'email' => 'alex@student.test',
         'password' => 'password',
-    ])->assertRedirect(route('dashboard'));
+    ])->assertRedirect(route('login.2fa'));
+
+    $code = Mail::sent(VerificationCodeMail::class)->last()->code;
+
+    $this->post(route('login.2fa.verify'), ['code' => $code])
+        ->assertRedirect(route('dashboard'));
 
     $this->assertAuthenticatedAs($student);
     $this->get(route('support-sessions.index'))->assertOk();
 });
+
 
 it('IT2 - after logging out (UC1), the UC3 session pages redirect to the login page', function () {
     $student = User::factory()->create();

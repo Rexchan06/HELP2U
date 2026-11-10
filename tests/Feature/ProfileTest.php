@@ -1,6 +1,6 @@
 <?php
 
-// Use Case 1 - Edit Profile (test sheet TC17 to TC19)
+// Use Case 1 - Edit Profile (test sheet TC17 to TC19 and TC59)
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +23,7 @@ function profileTestStudent(): User
     ]);
 }
 
-it('TC17 - update() function saves a new name and bio and redirects to the dashboard', function () {
+it('UC1-TC17 - update() function saves a new name and bio and redirects to the dashboard', function () {
     $student = profileTestStudent();
     $bio = 'I am a third-year computer science student interested in helping first-years with mathematics and Python.';
 
@@ -40,7 +40,7 @@ it('TC17 - update() function saves a new name and bio and redirects to the dashb
     ]);
 });
 
-it('TC18 - update() function rejects an empty full name', function () {
+it('UC1-TC18 - update() function rejects an empty full name', function () {
     $student = profileTestStudent();
 
     $this->actingAs($student)
@@ -50,7 +50,7 @@ it('TC18 - update() function rejects an empty full name', function () {
     $this->assertDatabaseHas('users', ['id' => $student->id, 'name' => 'Tan Yen Tze']);
 });
 
-it('TC19 - update() function rejects a bio longer than 200 characters', function () {
+it('UC1-TC19 - update() function rejects a bio longer than 200 characters', function () {
     $student = profileTestStudent();
 
     $this->actingAs($student)
@@ -60,11 +60,13 @@ it('TC19 - update() function rejects a bio longer than 200 characters', function
     $this->assertDatabaseHas('users', ['id' => $student->id, 'bio' => null]);
 });
 
-it('TC19 - update() function accepts a bio of exactly 200 characters', function () {
+it('UC1-TC59 - update() function accepts a bio of exactly 200 characters', function () {
     $student = profileTestStudent();
 
     $this->actingAs($student)
         ->put(route('profile.update'), ['name' => 'Tan Yen Tze', 'bio' => str_repeat('A', 200)])
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('dashboard'));
+
+    expect($student->fresh()->bio)->toBe(str_repeat('A', 200));
 });
