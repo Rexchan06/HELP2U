@@ -960,3 +960,27 @@ it('TC71 - index() function does not list other people\'s feedback', function ()
 it('TC72 - index() function redirects a guest (not logged in) to the login page', function () {
     $this->get(route('feedback.index'))->assertRedirect(route('login'));
 });
+
+// Support request is closed once its session ends (per data dictionary)
+
+it('TC73 - cancel() function marks the support request as CLOSED', function () {
+    $student = makeUser();
+    [, $vp] = makeVolunteer();
+    $match = makeMatch($student, $vp);
+    $session = makeSession($match);
+
+    $this->actingAs($student)->patch(route('support-sessions.cancel', $session));
+
+    expect($match->supportRequest->fresh()->status)->toBe(RequestStatus::Closed);
+});
+
+it('TC74 - complete() function marks the support request as CLOSED', function () {
+    $student = makeUser();
+    [$volUser, $vp] = makeVolunteer();
+    $match = makeMatch($student, $vp);
+    $session = makeSession($match, now()->subHour());
+
+    $this->actingAs($volUser)->patch(route('support-sessions.complete', $session));
+
+    expect($match->supportRequest->fresh()->status)->toBe(RequestStatus::Closed);
+});

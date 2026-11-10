@@ -147,11 +147,16 @@ class SupportSessionController extends Controller
             return back()->with('failed', 'This session has already started and can no longer be cancelled.');
         }
 
-        $supportSession->update([
-            'status' => SessionStatus::Cancelled,
-            'cancelled_at' => now(),
-            'cancelled_by' => $userId,
-        ]);
+        DB::transaction(function () use ($supportSession, $userId) {
+            $supportSession->update([
+                'status' => SessionStatus::Cancelled,
+                'cancelled_at' => now(),
+                'cancelled_by' => $userId,
+            ]);
+
+            $supportSession->volunteerMatch->supportRequest
+                ->update(['status' => RequestStatus::Closed]);
+        });
 
         // Notify the other participant
         $otherParty = $userId == $student->id ? $volunteer : $student;
@@ -237,10 +242,15 @@ class SupportSessionController extends Controller
             return back()->with('failed', 'This session has not started yet.');
         }
 
-        $supportSession->update([
-            'status' => SessionStatus::Completed,
-            'completed_at' => now(),
-        ]);
+        DB::transaction(function () use ($supportSession) {
+            $supportSession->update([
+                'status' => SessionStatus::Completed,
+                'completed_at' => now(),
+            ]);
+
+            $supportSession->volunteerMatch->supportRequest
+                ->update(['status' => RequestStatus::Closed]);
+        });
 
         $supportSession->volunteerMatch->supportRequest->user
             ->notify(new SessionCompleted($supportSession));
