@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="C:\DDrive\HELP University Environments\BIT216_SEPrinciple\HELP2U.Proj\HELP2U\phpunit.xml" tests="6" assertions="17" errors="0" failures="0" skipped="0" time="2.204174">
+    <testsuite name="Feature" tests="6" assertions="17" errors="0" failures="0" skipped="0" time="2.204174">
+      <testsuite name="Tests\Feature\MatchExpiryTest" file="tests\Feature\MatchExpiryTest.php" tests="6" assertions="17" errors="0" failures="0" skipped="0" time="2.204174">
+        <testcase name="it TC27 - expireStale() expires a pending match past its window, re-opens the request and notifies the student" file="tests\Feature\MatchExpiryTest.php::it TC27 - expireStale() expires a pending match past its window, re-opens the request and notifies the student" class="Tests\Feature\MatchExpiryTest" classname="Tests.Feature.MatchExpiryTest" assertions="4" time="0.530873"/>
+        <testcase name="it TC28 - expireStale() leaves matches still inside their window alone" file="tests\Feature\MatchExpiryTest.php::it TC28 - expireStale() leaves matches still inside their window alone" class="Tests\Feature\MatchExpiryTest" classname="Tests.Feature.MatchExpiryTest" assertions="4" time="0.151996"/>
+        <testcase name="it TC29 - expireStale() leaves already answered matches alone" file="tests\Feature\MatchExpiryTest.php::it TC29 - expireStale() leaves already answered matches alone" class="Tests\Feature\MatchExpiryTest" classname="Tests.Feature.MatchExpiryTest" assertions="2" time="0.019973"/>
+        <testcase name="it TC30 - the matches:expire artisan command expires stale matches" file="tests\Feature\MatchExpiryTest.php::it TC30 - the matches:expire artisan command expires stale matches" class="Tests\Feature\MatchExpiryTest" classname="Tests.Feature.MatchExpiryTest" assertions="2" time="0.162359"/>
+        <testcase name="it TC31 - lazy expiry runs when the student opens the requests page" file="tests\Feature\MatchExpiryTest.php::it TC31 - lazy expiry runs when the student opens the requests page" class="Tests\Feature\MatchExpiryTest" classname="Tests.Feature.MatchExpiryTest" assertions="2" time="1.300994"/>
+        <testcase name="it TC32 - the student can pick another volunteer after expiry" file="tests\Feature\MatchExpiryTest.php::it TC32 - the student can pick another volunteer after expiry" class="Tests\Feature\MatchExpiryTest" classname="Tests.Feature.MatchExpiryTest" assertions="3" time="0.037979"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>

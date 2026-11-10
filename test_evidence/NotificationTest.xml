@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="C:\DDrive\HELP University Environments\BIT216_SEPrinciple\HELP2U.Proj\HELP2U\phpunit.xml" tests="10" assertions="24" errors="0" failures="0" skipped="0" time="1.417721">
+    <testsuite name="Feature" tests="10" assertions="24" errors="0" failures="0" skipped="0" time="1.417721">
+      <testsuite name="Tests\Feature\NotificationTest" file="tests\Feature\NotificationTest.php" tests="10" assertions="24" errors="0" failures="0" skipped="0" time="1.417721">
+        <testcase name="it TC33 - notifications page redirects guests to login" file="tests\Feature\NotificationTest.php::it TC33 - notifications page redirects guests to login" class="Tests\Feature\NotificationTest" classname="Tests.Feature.NotificationTest" assertions="2" time="0.466205"/>
+        <testcase name="it TC34 - notifications page lists the signed-in user notifications" file="tests\Feature\NotificationTest.php::it TC34 - notifications page lists the signed-in user notifications" class="Tests\Feature\NotificationTest" classname="Tests.Feature.NotificationTest" assertions="3" time="0.351562"/>
+        <testcase name="it TC35 - the navigation bell shows the unread notification count" file="tests\Feature\NotificationTest.php::it TC35 - the navigation bell shows the unread notification count" class="Tests\Feature\NotificationTest" classname="Tests.Feature.NotificationTest" assertions="1" time="0.017574"/>
+        <testcase name="it TC36 - read() marks a notification as read and sends the volunteer to the match detail" file="tests\Feature\NotificationTest.php::it TC36 - read() marks a notification as read and sends the volunteer to the match detail" class="Tests\Feature\NotificationTest" classname="Tests.Feature.NotificationTest" assertions="3" time="0.020295"/>
+        <testcase name="it TC37 - read() sends the student to their requests for a status-change notification" file="tests\Feature\NotificationTest.php::it TC37 - read() sends the student to their requests for a status-change notification" class="Tests\Feature\NotificationTest" classname="Tests.Feature.NotificationTest" assertions="3" time="0.017359"/>
+        <testcase name="it TC38 - read() sends the student to the scheduling page for an accepted notification" file="tests\Feature\NotificationTest.php::it TC38 - read() sends the student to the scheduling page for an accepted notification" class="Tests\Feature\NotificationTest" classname="Tests.Feature.NotificationTest" assertions="2" time="0.018674"/>
+        <testcase name="it TC39 - read() sends the student to the session detail when it is already scheduled" file="tests\Feature\NotificationTest.php::it TC39 - read() sends the student to the session detail when it is already scheduled" class="Tests\Feature\NotificationTest" classname="Tests.Feature.NotificationTest" assertions="2" time="0.018360"/>
+        <testcase name="it TC40 - the login popup shows the latest notifications" file="tests\Feature\NotificationTest.php::it TC40 - the login popup shows the latest notifications" class="Tests\Feature\NotificationTest" classname="Tests.Feature.NotificationTest" assertions="4" time="0.259645"/>
+        <testcase name="it TC41 - readAll() marks every notification as read" file="tests\Feature\NotificationTest.php::it TC41 - readAll() marks every notification as read" class="Tests\Feature\NotificationTest" classname="Tests.Feature.NotificationTest" assertions="3" time="0.021909"/>
+        <testcase name="it TC42 - read() prevents reading another user notification" file="tests\Feature\NotificationTest.php::it TC42 - read() prevents reading another user notification" class="Tests\Feature\NotificationTest" classname="Tests.Feature.NotificationTest" assertions="1" time="0.226139"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>

@@ -45,7 +45,7 @@ function supportRequestFor(SupportMode $mode = SupportMode::F2F): SupportRequest
     ]);
 }
 
-it('lists active volunteers', function () {
+it('TC43 - the search lists only active volunteers', function () {
     volunteerWith(['supports_f2f' => true], ['python'], [1]);
     VolunteerProfile::factory()->create(['is_active' => false]);
 
@@ -54,7 +54,7 @@ it('lists active volunteers', function () {
     expect($response->viewData('volunteers')->total())->toBe(1);
 });
 
-it('filters volunteers by support mode', function () {
+it('TC44 - the search filters volunteers by support mode', function () {
     volunteerWith(['supports_f2f' => true, 'supports_virtual' => false]);
     volunteerWith(['supports_f2f' => false, 'supports_virtual' => true]);
 
@@ -64,7 +64,7 @@ it('filters volunteers by support mode', function () {
     expect($response->viewData('volunteers')->total())->toBe(1);
 });
 
-it('filters volunteers by availability day', function () {
+it('TC45 - the search filters volunteers by availability day', function () {
     volunteerWith([], [], [1, 3]);
     volunteerWith([], [], [5]);
 
@@ -73,7 +73,7 @@ it('filters volunteers by availability day', function () {
     expect($response->viewData('volunteers')->total())->toBe(1);
 });
 
-it('orders free volunteers before busy ones', function () {
+it('TC46 - free volunteers are ranked before busy ones', function () {
     $free = volunteerWith(['user_id' => User::factory()->create(['name' => 'Free Vol'])->id]);
     $busy = volunteerWith(['user_id' => User::factory()->create(['name' => 'Busy Vol'])->id]);
 
@@ -94,7 +94,7 @@ it('orders free volunteers before busy ones', function () {
         ->toBe([$free->id, $busy->id]);
 });
 
-it('pre-fills the mode filter from the support request context', function () {
+it('TC47 - the mode filter is pre-filled from the support request context', function () {
     $request = supportRequestFor(SupportMode::F2F);
 
     $f2f = volunteerWith(['supports_f2f' => true, 'supports_virtual' => false]);
@@ -108,7 +108,7 @@ it('pre-fills the mode filter from the support request context', function () {
     expect($response->viewData('volunteers')->total())->toBe(1);
 });
 
-it('filters volunteers by the request category in the backend', function () {
+it('TC48 - the backend filters volunteers by the request category', function () {
     $request = supportRequestFor();
 
     // Both support the request's mode so only the category filter discriminates.
@@ -124,7 +124,7 @@ it('filters volunteers by the request category in the backend', function () {
         ->toBe([$relevant->id]);
 });
 
-it('lets the student clear the pre-filled mode filter', function () {
+it('TC49 - the student can clear the pre-filled mode filter', function () {
     $request = supportRequestFor(SupportMode::F2F);
 
     $f2f = volunteerWith(['supports_f2f' => true, 'supports_virtual' => false]);
@@ -138,7 +138,7 @@ it('lets the student clear the pre-filled mode filter', function () {
     expect($response->viewData('volunteers')->total())->toBe(2);
 });
 
-it('does not apply the category filter without request context', function () {
+it('TC50 - the category filter is not applied without request context', function () {
     volunteerWith();
     volunteerWith();
 
@@ -147,7 +147,7 @@ it('does not apply the category filter without request context', function () {
     expect($response->viewData('volunteers')->total())->toBe(2);
 });
 
-it('boosts volunteers available on the request preferred day', function () {
+it('TC51 - volunteers available on the request preferred day get a score boost', function () {
     $request = supportRequestFor();
     $request->update(['preferred_datetime' => now()->next('Monday')]);
 
@@ -163,7 +163,7 @@ it('boosts volunteers available on the request preferred day', function () {
         ->toBe([$availableMonday->id, $availableTuesday->id]);
 });
 
-it('badges the top-ranked volunteer as best match', function () {
+it('TC52 - the top-ranked volunteer is badged as Best Match', function () {
     $request = supportRequestFor();
     volunteerWith(['supports_f2f' => true])->categories()->attach($request->category_id);
 
@@ -172,7 +172,7 @@ it('badges the top-ranked volunteer as best match', function () {
         ->assertSee('Best Match');
 });
 
-it('shows other matching volunteers below the best match', function () {
+it('TC53 - other matching volunteers are listed below the best match', function () {
     $request = supportRequestFor();
     $request->update(['preferred_datetime' => now()->next('Monday')]);
 
@@ -190,7 +190,7 @@ it('shows other matching volunteers below the best match', function () {
     expect($response->viewData('volunteers')->pluck('id')->first())->toBe($best->id);
 });
 
-it('does not show a best match badge without request context', function () {
+it('TC54 - no Best Match badge is shown without request context', function () {
     volunteerWith();
 
     $this->get(route('volunteers.index'))
@@ -198,7 +198,7 @@ it('does not show a best match badge without request context', function () {
         ->assertDontSee('Best Match');
 });
 
-it('shows a volunteer profile detail page', function () {
+it('TC55 - the volunteer profile detail page shows all profile fields', function () {
     $volunteer = volunteerWith(
         ['bio' => 'Third-year CS student happy to help.'],
         ['python'],
@@ -214,7 +214,7 @@ it('shows a volunteer profile detail page', function () {
         ->assertSee('Wednesday');
 });
 
-it('returns 404 for inactive volunteer profiles', function () {
+it('TC56 - inactive volunteer profiles return 404', function () {
     $volunteer = VolunteerProfile::factory()->create(['is_active' => false]);
 
     $this->get(route('volunteers.show', $volunteer))->assertNotFound();
