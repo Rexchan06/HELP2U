@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\VerificationController;
@@ -52,6 +53,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/volunteers', [VolunteerController::class, 'index'])->name('volunteers.index');
     Route::get('/volunteers/{volunteer}', [VolunteerController::class, 'show'])->name('volunteers.show');
     Route::post('/volunteers/{volunteer}/matches', [VolunteerMatchController::class, 'store'])->name('volunteer-matches.store');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+
+    Route::get('/matches/inbox', [VolunteerMatchController::class, 'index'])->name('volunteer-matches.index');
+    Route::get('/matches/{match}', [VolunteerMatchController::class, 'show'])->name('volunteer-matches.show');
+    Route::post('/matches/{match}/respond', [VolunteerMatchController::class, 'respond'])->name('volunteer-matches.respond');
 
     Route::get('/support-requests/{supportRequest}/sessions/create', [SupportSessionController::class, 'create'])
         ->name('support-sessions.create');

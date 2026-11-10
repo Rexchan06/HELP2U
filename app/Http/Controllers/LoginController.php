@@ -105,7 +105,7 @@ class LoginController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()->intended(route('dashboard'))->with('show_unread_popup', true);
     }
 
     public function resendTwoFactor(Request $request, VerificationService $verification)
