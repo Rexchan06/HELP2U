@@ -1,13 +1,12 @@
 <?php
 
-// Email verification before the account is saved, and two-factor login (test sheet TC30 to TC39)
+// Email verification code (before the password step) and two-factor login (test sheet TC30 to TC39)
 
 use App\Enums\CodePurpose;
 use App\Mail\VerificationCodeMail;
 use App\Models\User;
 use App\Services\VerificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 
 uses(RefreshDatabase::class);
@@ -31,10 +30,9 @@ function twoFactorTestStudent(): User
 function twoFactorStartRegistration(): string
 {
     return app(VerificationService::class)->startRegistration([
-        'student_id'    => 'B2501146',
-        'name'          => 'Tan Yen Tze',
-        'email'         => 'yentze@helplive.edu.my',
-        'password_hash' => Hash::make('Password123'),
+        'student_id' => 'B2501146',
+        'name'       => 'Tan Yen Tze',
+        'email'      => 'yentze@helplive.edu.my',
     ]);
 }
 
@@ -50,25 +48,20 @@ function twoFactorWrongCode(string $realCode): string
     return $realCode === '000000' ? '111111' : '000000';
 }
 
-it('UC1-TC30 - store() function creates the account and logs the student in only after the correct code', function () {
+it('TC30 - store() function accepts the correct code and opens the create password page', function () {
     Mail::fake();
     $token = twoFactorStartRegistration();
 
-    // Before verification the student is not in the users table
-    $this->assertDatabaseMissing('users', ['email' => 'yentze@helplive.edu.my']);
-
     $this->post(route('verification.store', $token), ['code' => twoFactorSentCode(CodePurpose::Register)])
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('verification.password', $token))
+        ->assertSessionHas('registration_verified');
 
-    $user = User::where('email', 'yentze@helplive.edu.my')->firstOrFail();
-
-    expect($user->student_id)->toBe('B2501146')
-        ->and($user->email_verified_at)->not->toBeNull()
-        ->and(Hash::check('Password123', $user->password))->toBeTrue();
-    $this->assertAuthenticatedAs($user);
+    // The account is still not saved: the student has to choose a password first
+    $this->assertDatabaseMissing('users', ['email' => 'yentze@helplive.edu.my']);
+    $this->assertGuest();
 });
 
-it('UC1-TC31 - store() function does not create an account when the code is wrong', function () {
+it('TC31 - store() function does not create an account when the code is wrong', function () {
     Mail::fake();
     $token = twoFactorStartRegistration();
 
@@ -79,7 +72,7 @@ it('UC1-TC31 - store() function does not create an account when the code is wron
     $this->assertGuest();
 });
 
-it('UC1-TC32 - store() function does not create an account when the code has expired', function () {
+it('TC32 - store() function does not create an account when the code has expired', function () {
     Mail::fake();
     $token = twoFactorStartRegistration();
     $code = twoFactorSentCode(CodePurpose::Register);
@@ -92,7 +85,7 @@ it('UC1-TC32 - store() function does not create an account when the code has exp
     $this->assertDatabaseMissing('users', ['email' => 'yentze@helplive.edu.my']);
 });
 
-it('UC1-TC33 - resend() function emails a new verification code that can be used', function () {
+it('TC33 - resend() function emails a new verification code that can be used', function () {
     Mail::fake();
     $token = twoFactorStartRegistration();
 
@@ -101,10 +94,10 @@ it('UC1-TC33 - resend() function emails a new verification code that can be used
     Mail::assertSent(VerificationCodeMail::class, 2);
 
     $this->post(route('verification.store', $token), ['code' => twoFactorSentCode(CodePurpose::Register)])
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('verification.password', $token));
 });
 
-it('UC1-TC34 - store() function emails a login code after the correct email and password', function () {
+it('TC34 - store() function emails a login code after the correct email and password', function () {
     Mail::fake();
     $user = twoFactorTestStudent();
 
@@ -118,7 +111,7 @@ it('UC1-TC34 - store() function emails a login code after the correct email and 
     Mail::assertSent(VerificationCodeMail::class, fn ($mail) => $mail->hasTo('yentze@helplive.edu.my') && $mail->purpose === CodePurpose::Login);
 });
 
-it('UC1-TC35 - verifyTwoFactor() function logs the student in when the login code is correct', function () {
+it('TC35 - verifyTwoFactor() function logs the student in when the login code is correct', function () {
     Mail::fake();
     $user = twoFactorTestStudent();
     app(VerificationService::class)->sendLoginCode($user);
@@ -130,7 +123,7 @@ it('UC1-TC35 - verifyTwoFactor() function logs the student in when the login cod
     $this->assertAuthenticatedAs($user);
 });
 
-it('UC1-TC36 - verifyTwoFactor() function rejects a wrong login code', function () {
+it('TC36 - verifyTwoFactor() function rejects a wrong login code', function () {
     Mail::fake();
     $user = twoFactorTestStudent();
     app(VerificationService::class)->sendLoginCode($user);
@@ -142,7 +135,7 @@ it('UC1-TC36 - verifyTwoFactor() function rejects a wrong login code', function 
     $this->assertGuest();
 });
 
-it('UC1-TC37 - show() function sends the student back to registration when the pending registration is gone', function () {
+it('TC37 - show() function sends the student back to registration when the pending registration is gone', function () {
     Mail::fake();
     $verification = app(VerificationService::class);
     $token = twoFactorStartRegistration();
@@ -153,11 +146,11 @@ it('UC1-TC37 - show() function sends the student back to registration when the p
     $this->get($link)->assertRedirect(route('register'));
 });
 
-it('UC1-TC38 - showTwoFactor() function redirects to login when the password step was not done', function () {
+it('TC38 - showTwoFactor() function redirects to login when the password step was not done', function () {
     $this->get(route('login.2fa'))->assertRedirect(route('login'));
 });
 
-it('UC1-TC39 - verifyTwoFactor() function blocks a code after 5 wrong attempts, even for the correct code', function () {
+it('TC39 - verifyTwoFactor() function blocks a code after 5 wrong attempts, even for the correct code', function () {
     Mail::fake();
     $user = twoFactorTestStudent();
     app(VerificationService::class)->sendLoginCode($user);

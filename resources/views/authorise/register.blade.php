@@ -36,18 +36,6 @@
                 @error('email')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
             </div>
 
-            <div>
-                <label for="password" class="block text-sm font-semibold">Password</label>
-                <input id="password" name="password" type="password" required class="{{ $inputClass }}">
-                <p class="mt-2 text-xs text-gray-500">At least 8 characters, with letters and numbers.</p>
-                @error('password')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
-            </div>
-
-            <div>
-                <label for="password_confirmation" class="block text-sm font-semibold">Confirm password</label>
-                <input id="password_confirmation" name="password_confirmation" type="password" required class="{{ $inputClass }}">
-            </div>
-
             <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-700">
                 Create account
             </button>

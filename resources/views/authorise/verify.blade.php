@@ -1,6 +1,6 @@
 @extends('layouts.guest')
 
-@section('title', 'Verify your account - HELP2U')
+@section('title', 'Verify your email - HELP2U')
 
 @section('content')
     @php
@@ -14,10 +14,10 @@
             </div>
         @endif
 
-        <h2 class="text-2xl font-bold tracking-tight">Verify your account</h2>
+        <h2 class="text-2xl font-bold tracking-tight">Verify your email</h2>
         <p class="mt-2 text-sm text-gray-500">
             Enter the 6-digit code we sent to <strong class="text-gray-900">{{ $email }}</strong>.
-            It expires in 10 minutes. Your account is created once you verify it.
+            It expires in 10 minutes. After that you will choose a password.
         </p>
 
         <form method="POST" action="{{ route('verification.store', $token) }}" class="mt-6 space-y-5">
@@ -32,7 +32,7 @@
             </div>
 
             <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-700">
-                Activate account
+                Verify code
             </button>
         </form>
 
