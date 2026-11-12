@@ -15,9 +15,9 @@ use Illuminate\Support\Str;
 
 class VerificationService
 {
-    public const CODE_EXPIRY_MINUTES = 10;   
-    public const LINK_EXPIRY_MINUTES = 60;   
-    public const MAX_WRONG_CODES     = 5;    
+    public const CODE_EXPIRY_MINUTES = 10;   // how long a code works
+    public const LINK_EXPIRY_MINUTES = 60;   // how long a pending registration (and its link) is kept
+    public const MAX_WRONG_CODES     = 5;    // wrong tries allowed for one code
 
     // =====================================================================
     //  REGISTRATION: nothing is saved in the users table until the code is verified.
@@ -27,7 +27,7 @@ class VerificationService
     /**
      * Keep the registration details in the cache, email a code and a link,
      * and return the token that identifies this pending registration.
-     * $data needs: student_id, name, email, password_hash.
+     * $data needs: student_id, name, email (the password is chosen after the code is verified).
      */
     public function startRegistration(array $data): string
     {
@@ -76,6 +76,7 @@ class VerificationService
         $pending['code_hash'] = Hash::make($code);
         $pending['code_expires_at'] = now()->addMinutes(self::CODE_EXPIRY_MINUTES)->timestamp;
         $pending['attempts'] = 0;
+        $pending['verified_at'] = null;   // a new code must be entered again
 
         $this->savePending($token, $pending);
         $this->sendRegistrationEmail($pending, $code, $token);
@@ -104,6 +105,15 @@ class VerificationService
         }
 
         return null;
+    }
+
+    /** Remember that the code was entered correctly. The student must still choose a password. */
+    public function markRegistrationVerified(string $token): void
+    {
+        if ($pending = $this->pendingRegistration($token)) {
+            $pending['verified_at'] = now()->timestamp;
+            $this->savePending($token, $pending);
+        }
     }
 
     /** Remove a waiting registration (after the account has been created). */
@@ -196,6 +206,9 @@ class VerificationService
         Mail::to($user->email)->send(new VerificationCodeMail($user->name, $code, CodePurpose::Reset));
     }
 
+    // =====================================================================
+    //  Helpers
+    // =====================================================================
 
     private function newCode(): string
     {

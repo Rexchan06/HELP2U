@@ -20,6 +20,9 @@ Route::get('/', fn () => redirect()->route('login'));
 Route::get('/register', [RegisterController::class, 'show'])->name('register');
 Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
 
+Route::get('/verify/{token}/password', [VerificationController::class, 'showPassword'])->name('verification.password');
+Route::post('/verify/{token}/password', [VerificationController::class, 'storePassword'])->middleware('throttle:10,1')->name('verification.password.store');
+
 Route::get('/verify/{token}', [VerificationController::class, 'show'])->middleware('signed')->name('verification.show');
 Route::post('/verify/{token}', [VerificationController::class, 'store'])->middleware('throttle:10,1')->name('verification.store');
 Route::post('/verify/{token}/resend', [VerificationController::class, 'resend'])->middleware('throttle:3,1')->name('verification.resend');
