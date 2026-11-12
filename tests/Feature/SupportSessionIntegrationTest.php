@@ -227,3 +227,160 @@ it('IT9 - after a session is booked in UC3, the volunteer is shown as busy in th
     $this->get(route('volunteers.index'))
         ->assertViewHas('volunteers', fn ($list) => (int) $list->firstWhere('id', $profile->id)->is_free === 0);
 });
+
+// Iteration 2 Integration Tests
+
+function integPendingMatch(User $student, VolunteerProfile $profile): VolunteerMatch
+{
+    $request = SupportRequest::create([
+        'user_id' => $student->id,
+        'category_id' => Category::firstOrCreate(['name' => 'Academic'])->id,
+        'description' => 'Need help with Laravel validation',
+        'support_mode' => 'F2F',
+        'status' => RequestStatus::Pending,
+    ]);
+
+    return VolunteerMatch::create([
+        'support_request_id' => $request->id,
+        'volunteer_profile_id' => $profile->id,
+        'status' => MatchStatus::Pending,
+        'expires_at' => now()->addHours(48),
+    ]);
+}
+
+it('IT10 - after the volunteer accepts in UC2, the student is notified and the notification opens the UC3 schedule form', function () {
+    $student = User::factory()->create();
+    [$volunteerUser, $profile] = integVolunteer();
+    $match = integPendingMatch($student, $profile);
+    $request = $match->supportRequest;
+
+    $this->actingAs($student)->get(route('support-sessions.create', $request))
+        ->assertSessionHas('failed', 'This request has no accepted match.');
+
+    $this->actingAs($volunteerUser)->post(route('volunteer-matches.respond', $match), ['decision' => 'accept'])
+        ->assertRedirect(route('support-requests.index'));
+
+    expect($request->fresh()->status)->toBe(RequestStatus::Matched);
+
+    $notification = $student->notifications()->first();
+    expect($notification->data['decision'])->toBe('accepted');
+
+    $this->actingAs($student)->post(route('notifications.read', $notification->id))
+        ->assertRedirect(route('support-sessions.create', $request));
+
+    $this->get(route('support-sessions.create', $request))->assertOk();
+});
+
+it('IT11 - a request the volunteer does not answer within 48 hours (UC2) cannot be scheduled in UC3 and is open again', function () {
+    $student = User::factory()->create();
+    [, $profile] = integVolunteer();
+    $match = integPendingMatch($student, $profile);
+    $request = $match->supportRequest;
+
+    $this->travel(49)->hours();
+    $this->artisan('matches:expire')->assertSuccessful();
+
+    expect($match->fresh()->status)->toBe(MatchStatus::Expired)
+        ->and($request->fresh()->status)->toBe(RequestStatus::Open)
+        ->and($student->notifications()->first()->data['decision'])->toBe('expired');
+
+    $this->actingAs($student)->get(route('support-sessions.create', $request))
+        ->assertRedirect()
+        ->assertSessionHas('failed', 'This request has no accepted match.');
+
+    $this->get(route('support-requests.index'))
+        ->assertOk()
+        ->assertSee('Find Volunteer');
+});
+
+it('IT12 - cancelling a session in UC3 closes the request on the UC2 My Requests page and notifies the volunteer', function () {
+    $student = User::factory()->create(['name' => 'Alex Tan']);
+    [$volunteerUser, $profile] = integVolunteer();
+    $request = integAcceptedRequest($student, $profile);
+
+    $this->actingAs($student)->post(route('support-sessions.store', $request), [
+        'scheduled_start' => integSlot(),
+        'location' => 'Library',
+    ])->assertSessionHasNoErrors();
+
+    $session = SupportSession::first();
+
+    $this->patch(route('support-sessions.cancel', $session))
+        ->assertSessionHas('success', 'Session cancelled. The other participant has been notified.');
+
+    expect($request->fresh()->status)->toBe(RequestStatus::Closed);
+
+    $this->get(route('support-requests.index'))
+        ->assertOk()
+        ->assertSee('Closed')
+        ->assertDontSee('Schedule Session');
+
+    $this->actingAs($volunteerUser)->get(route('notifications.index'))
+        ->assertOk()
+        ->assertSee('Alex Tan cancelled the session');
+});
+
+it('IT13 - feedback given in UC3 updates the volunteer\'s rating in the UC2 volunteer directory', function () {
+    $student = User::factory()->create();
+    [$volunteerUser, $profile] = integVolunteer();
+    $request = integAcceptedRequest($student, $profile);
+
+    $this->actingAs($student)->get(route('volunteers.index'))
+        ->assertViewHas('volunteers', fn ($list) => $list->firstWhere('id', $profile->id)->rating === null);
+
+    $session = SupportSession::create([
+        'volunteer_match_id' => $request->volunteerMatches()->first()->id,
+        'scheduled_start' => now()->subHour(),
+        'location' => 'Library',
+    ]);
+
+    $this->actingAs($volunteerUser)->patch(route('support-sessions.complete', $session))
+        ->assertSessionHas('success');
+
+    $this->actingAs($student)->post(route('feedback.store', $session), [
+        'rating' => 4,
+        'comment' => 'Very helpful session.',
+    ])->assertSessionHasNoErrors();
+
+    $this->get(route('volunteers.index'))
+        ->assertViewHas('volunteers', function ($list) use ($profile) {
+            $volunteer = $list->firstWhere('id', $profile->id);
+
+            return (float) $volunteer->rating === 4.0 && (int) $volunteer->reviews_count === 1;
+        });
+});
+
+it('IT14 - a reschedule in UC3 appears in the unread pop-up when the volunteer logs in with 2FA (UC1)', function () {
+    Mail::fake();
+    $student = User::factory()->create(['name' => 'Alex Tan']);
+    [$volunteerUser, $profile] = integVolunteer();
+    $request = integAcceptedRequest($student, $profile);
+
+    $this->actingAs($student)->post(route('support-sessions.store', $request), [
+        'scheduled_start' => integSlot(),
+        'location' => 'Library',
+    ])->assertSessionHasNoErrors();
+
+    $this->patch(route('support-sessions.reschedule.update', SupportSession::first()), [
+        'scheduled_start' => now()->addDays(7)->setTime(14, 0)->format('Y-m-d H:i:s'),
+    ])->assertSessionHasNoErrors();
+
+    $this->post(route('logout'));
+
+    $this->post(route('login.store'), [
+        'email' => $volunteerUser->email,
+        'password' => 'password',
+    ])->assertRedirect(route('login.2fa'));
+
+    $code = Mail::sent(VerificationCodeMail::class)->last()->code;
+
+    $this->post(route('login.2fa.verify'), ['code' => $code])
+        ->assertRedirect(route('dashboard'));
+
+    $this->assertAuthenticatedAs($volunteerUser);
+
+    $this->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('id="notification-popup"', false)
+        ->assertSee('Alex Tan rescheduled your session');
+});
