@@ -68,7 +68,7 @@
             <div class="mt-6 rounded-lg bg-gray-50 px-4 py-3 text-sm">
                 @if ($isF2F)
                     <span class="text-gray-500">Meeting location:</span>
-                    <span class="font-medium">{{ $supportSession->location ?? $volunteerProfile->location ?? 'To be confirmed' }}</span>
+                    <span class="font-medium break-words">{{ $supportSession->location ?? $volunteerProfile->location ?? 'To be confirmed' }}</span>
                 @elseif ($volunteerProfile->meeting_link)
                     <span class="text-gray-500">Meeting link:</span>
                     <a href="{{ $volunteerProfile->meeting_link }}" target="_blank" rel="noopener noreferrer"
