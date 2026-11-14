@@ -59,7 +59,7 @@ HELP2U/
 │   ├── migrations/       # Database schema
 │   └── seeders/          # Categories, sample volunteers and demo accounts
 ├── tests/Feature/        # Automated tests for all three use cases
-├── documents/            # Project plan, requirements and design documents
+├── documentation/            # Project plan, requirements and design documents
 ├── .github/workflows/    # CI pipeline
 └── README.md
 ```
@@ -154,7 +154,7 @@ Tests use an in-memory database, so they never touch your local data.
 
 ## Documentation
 
-Project documents are in [`documents/`](documents/):
+Project documents are in [`documentation/`](documentation/):
 - Assignment 1 Task 1: Project Plan
 - Assignment 1 Task 2: Requirements Specification and Design
 - Iteration 1 presentation
