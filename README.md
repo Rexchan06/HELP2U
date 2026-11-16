@@ -58,7 +58,7 @@ HELP2U/
 ├── routes/               # web.php (pages) and console.php (scheduled jobs)
 ├── database/
 │   ├── migrations/       # Database schema
-│   └── seeders/          # Categories, sample volunteers and demo accounts
+│   └── seeders/          # Categories, sample volunteers, demo accounts and final demo data
 ├── tests/Feature/        # Automated tests for all three use cases
 ├── documentation/
 │   ├── project-plan/     # Project plan, Gantt chart, Assignment 2 report, presentation
@@ -113,7 +113,7 @@ MAIL_FROM_ADDRESS="your-account@gmail.com"
 MAIL_FROM_NAME="HELP2U"
 ```
 
-Never commit real credentials. `.env` is git-ignored for this reason. With SMTP on, the demo accounts below won't receive their codes because their addresses aren't real inboxes, so switch back to `MAIL_MAILER=log` to use them.
+Never commit real credentials. `.env` is git-ignored for this reason. The accounts in [Demo accounts](#demo-accounts) use made-up addresses that can't receive mail, so use `MAIL_MAILER=log` with them. The [final demo data](#final-demo-data) uses the team's real student accounts and works with either setting.
 
 ### Request expiry job (optional)
 Requests also expire when someone opens the relevant pages. To run the hourly background check as well:
@@ -134,6 +134,30 @@ All demo accounts use the password **`Demo1234`**. Login still asks for the emai
 | Priya Nair | priya.nair@helplive.edu.my | Volunteer | Campus orientation, Tue/Thu 10am–1pm |
 
 To reset everything to this state, run the two seed commands from Setup again.
+
+## Final demo data
+
+A separate, smaller data set prepared for the final live demonstration. It uses the team's real student accounts so 2FA codes arrive in their university inboxes.
+
+```bash
+php artisan migrate:fresh --seeder=FinalDemoSeeder
+```
+
+> **Warning:** this deletes all existing data. Run it no more than 7 days before the demo so the upcoming session is still in the future.
+
+It creates:
+
+- **Chan Zi Hao** as a student and **Kaung Myat Si Thu** as a volunteer, both already verified, with the password **`Demo1234`**
+- Four sample volunteers so that search and filters show realistic results
+- Three sessions between the two accounts, with times set relative to when the seeder runs:
+
+| Session | State after seeding | Shown in the demo |
+| --- | --- | --- |
+| Campus Wi-Fi setup | Scheduled, 7 days ahead | Cancel a session; the other participant is notified |
+| Database normalisation | Scheduled, start time already passed | The volunteer marks it completed, then the student leaves feedback |
+| SQL JOINs | Completed, rated 5 stars | Session and feedback history |
+
+**Tan Yen Tze** is not seeded and registers live to show the full flow: registration, volunteer profile setup, request, matching, acceptance and scheduling.
 
 ## Running the tests
 
