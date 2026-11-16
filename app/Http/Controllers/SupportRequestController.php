@@ -28,7 +28,7 @@ class SupportRequestController extends Controller
         // Volunteers also see the requests students sent to them, below their own.
         $incomingMatches = $request->user()->volunteerProfile
             ?->volunteerMatches()
-                ->with(['supportRequest.category', 'supportRequest.user'])
+                ->with(['supportRequest.category', 'supportRequest.user', 'supportSession'])
                 ->latest()
                 ->paginate(10, ['*'], 'incoming_page');
 

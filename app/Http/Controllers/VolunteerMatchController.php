@@ -101,7 +101,7 @@ class VolunteerMatchController extends Controller
         }
 
         $matches = $profile->volunteerMatches()
-            ->with(['supportRequest.category', 'supportRequest.user'])
+            ->with(['supportRequest.category', 'supportRequest.user', 'supportSession'])
             ->latest()
             ->paginate(10);
 

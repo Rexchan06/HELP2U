@@ -62,6 +62,12 @@
                     <span style="color: #6b7280; font-weight: 500;">Preferred Date &amp; Time</span>
                     <span style="color: #111827;">{{ $supportRequest->preferred_datetime?->format('M d, Y, g:i A') ?? 'Flexible' }}</span>
                 </div>
+                @if ($match->supportSession?->status === \App\Enums\SessionStatus::Scheduled)
+                    <div style="{{ $row }}">
+                        <span style="color: #6b7280; font-weight: 500;">Scheduled Session</span>
+                        <span style="color: #111827;">{{ $match->supportSession->scheduled_start->format('M d, Y, g:i A') }}</span>
+                    </div>
+                @endif
                 <div style="{{ $row }}">
                     <span style="color: #6b7280; font-weight: 500;">Requested On</span>
                     <span style="color: #111827;">{{ $match->created_at->format('M d, Y, g:i A') }}</span>
