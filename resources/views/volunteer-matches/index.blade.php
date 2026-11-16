@@ -41,7 +41,9 @@
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4">{{ $match->supportRequest->support_mode->label() }}</td>
                                 <td class="whitespace-nowrap px-6 py-4 text-gray-500">
-                                    {{ $match->supportRequest->preferred_datetime?->format('d M Y, g:i A') ?? '—' }}
+                                    {{ ($match->supportSession?->status === \App\Enums\SessionStatus::Scheduled
+                                        ? $match->supportSession->scheduled_start
+                                        : $match->supportRequest->preferred_datetime)?->format('d M Y, g:i A') ?? '—' }}
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4">
                                     <span @class([
