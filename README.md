@@ -17,7 +17,7 @@ Built for **BIT216 Software Engineering Principles** (Group 4) as a solution to 
 ## Features
 
 **UC1: Accounts and profiles**
-- Registration restricted to `@helplive.edu.my` emails, activated with a 6-digit email code
+- Registration restricted to `@helplive.edu.my` emails: the student verifies their email with a 6-digit code, then sets a password, and the account is activated and signed in
 - Login with two-factor authentication (emailed code) and a limit on failed password attempts
 - Forgot password with a reset code
 - Student profile, plus an optional volunteer profile: support categories, skills, support modes and weekly availability
@@ -33,6 +33,7 @@ Built for **BIT216 Software Engineering Principles** (Group 4) as a solution to 
 - Book a one-hour session from the volunteer's available slots (double-booking is prevented)
 - Reschedule or cancel a session; the other participant is notified
 - The volunteer marks a session as completed once it has started
+- The support request is closed when its session is completed or cancelled
 - The student rates the session (1–5 stars) with an optional comment
 - Session and feedback history
 
@@ -59,7 +60,11 @@ HELP2U/
 │   ├── migrations/       # Database schema
 │   └── seeders/          # Categories, sample volunteers and demo accounts
 ├── tests/Feature/        # Automated tests for all three use cases
-├── documentation/            # Project plan, requirements and design documents
+├── documentation/
+│   ├── project-plan/     # Project plan, Gantt chart, Assignment 2 report, presentation
+│   ├── requirements/     # Requirements specification and UniHELP case study
+│   ├── design/           # Architecture, ERD and sitemap diagrams, page wireframes
+│   └── testing/          # Unit and system test cases and results
 ├── .github/workflows/    # CI pipeline
 └── README.md
 ```
@@ -142,7 +147,7 @@ On Windows, if `php artisan test` fails with a temporary file "Permission denied
 vendor\bin\pest
 ```
 
-Tests use an in-memory database, so they never touch your local data.
+Tests use an in-memory database, so they never touch your local data. Test cases and recorded results for unit, integration and system testing are in [`documentation/testing/`](documentation/testing/).
 
 ## Development workflow
 
@@ -150,12 +155,16 @@ Tests use an in-memory database, so they never touch your local data.
 - Each member developed their use case on their own branch (see the team table) and kept it up to date with `master`.
 - Work was merged through **pull requests** using merge commits, so each member's commit history is kept.
 - Every push and pull request runs the test suite on GitHub Actions; pull requests are merged only when CI passes.
-- Fixes found during integration testing went through short-lived `hotfix/...` branches and their own pull requests.
+- Fixes and integration tests found during integration testing went through short-lived branches (`hotfix/...`, `test/...`) and their own pull requests.
 
 ## Documentation
 
-Project documents are in [`documentation/`](documentation/):
-- Assignment 1 Task 1: Project Plan
-- Assignment 1 Task 2: Requirements Specification and Design
-- Iteration 1 presentation
-- UniHELP case study
+All project documents are in [`documentation/`](documentation/):
+
+| Folder | Contents |
+| --- | --- |
+| [`project-plan/`](documentation/project-plan/) | Assignment 1 Task 1: Project Plan; Gantt chart (`.gan` and PDF); Assignment 2 report; Iteration 1 presentation |
+| [`requirements/`](documentation/requirements/) | Assignment 1 Task 2: Requirements Specification and Design; UniHELP case study |
+| [`design/diagrams/`](documentation/design/diagrams/) | Architecture diagram, entity relationship diagram, sitemap |
+| [`design/wireframes/`](documentation/design/wireframes/) | Wireframes for all 14 pages, from registration to feedback |
+| [`testing/`](documentation/testing/) | Unit and system testing workbook |
